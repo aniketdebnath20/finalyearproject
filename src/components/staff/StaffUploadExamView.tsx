@@ -8,9 +8,6 @@ import {
   Plus,
   Search,
   X,
-  Clock,
-  MapPin,
-  FileText,
   ArrowUp
 } from 'lucide-react';
 
@@ -23,7 +20,7 @@ export const StaffUploadExamView: React.FC = () => {
 
   // Form states for creating exam
   const [examName, setExamName] = useState('Java OOPs Module Assessment');
-  const [departmentId, setDepartmentId] = useState(currentStaff?.departmentId || departments[0]?.id || '');
+  const [departmentId] = useState(currentStaff?.departmentId || departments[0]?.id || '');
   const [courseId, setCourseId] = useState(courses[0]?.id || '');
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [semester, setSemester] = useState(6);
@@ -70,7 +67,7 @@ export const StaffUploadExamView: React.FC = () => {
         ex.examName.toLowerCase().includes(q) ||
         (sub?.subjectName || '').toLowerCase().includes(q) ||
         (sub?.subjectCode || '').toLowerCase().includes(q) ||
-        ex.roomHall.toLowerCase().includes(q);
+        (ex.roomHall || '').toLowerCase().includes(q);
 
       const matchesCourse = !selectedCourseFilter || ex.courseId === selectedCourseFilter;
       return matchesSearch && matchesCourse;

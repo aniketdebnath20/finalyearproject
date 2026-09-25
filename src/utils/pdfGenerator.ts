@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { Student, Subject, AcademicResult, StudentFeeRecord, FeePayment, Department, Staff, StudentAttendanceRecord } from '../types';
+import type { Student, Subject, AcademicResult, StudentFeeRecord, FeePayment, Department, Staff, StudentAttendanceRecord } from '../types';
 
 /**
  * Formats currency in INR format (e.g. ₹80,000)
@@ -245,7 +245,7 @@ export function generateTranscriptPDF({
     doc.text(String(r.totalMarks), cols.tot, y + 4.8, { align: 'center' });
 
     doc.setTextColor(47, 118, 109);
-    doc.text(r.grade, cols.grd, y + 4.8, { align: 'center' });
+    doc.text(String(r.grade ?? 'F'), cols.grd, y + 4.8, { align: 'center' });
 
     doc.setTextColor(34, 47, 59);
     doc.text(String(r.gradePoints), cols.pts, y + 4.8, { align: 'center' });
@@ -931,7 +931,7 @@ export function generateAdminAuditReportPDF({
     { label: 'TOTAL SCHOLARS', val: `${totalStudents}`, sub: `${departments.length} Departments` },
     { label: 'FACULTY APPOINTMENTS', val: `${totalFaculty}`, sub: `${facultyRatio}:1 Student/Staff` },
     { label: 'REALIZED REVENUE', val: formatCurrency(collectedFees), sub: `${recoveryRate}% of Total` },
-    { label: 'CAMPUS ATTENDANCE', val: `${overallAttRate}%`, sub: 'Examination Compliant' }
+    { label: 'CAMPUS ATTENDANCE', val: `${overallAttRate}%`, sub: `${passRate}% pass rate • Avg GPA ${meanGpa}` }
   ];
 
   kpis.forEach((kpi, idx) => {

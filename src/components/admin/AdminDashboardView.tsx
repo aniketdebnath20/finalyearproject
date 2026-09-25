@@ -24,7 +24,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onNavigate,
   loading = false
 }) => {
-  const { students, staffList, courses, feeRecords, currentUser } = useUniversity();
+  const { students, staffList, courses, currentUser } = useUniversity();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 

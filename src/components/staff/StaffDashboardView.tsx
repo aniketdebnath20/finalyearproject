@@ -24,7 +24,7 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
   onNavigate,
   loading = false
 }) => {
-  const { currentStaff, subjects, students } = useUniversity();
+  const { } = useUniversity();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 

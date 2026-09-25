@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Student } from '../../types';
 import { useUniversity } from '../../context/UniversityContext';
-import { X, Mail, Phone, MapPin, Calendar, BookOpen, GraduationCap, CheckCircle } from 'lucide-react';
+import { X, MapPin, Calendar } from 'lucide-react';
 import { truncateEmail } from '../../utils/formatters';
 
 interface StudentProfileModalProps {

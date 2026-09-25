@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React from 'react';
 import { ShieldAlert, Clock, LogOut, CheckCircle2 } from 'lucide-react';
 
 interface SessionTimeoutModalProps {

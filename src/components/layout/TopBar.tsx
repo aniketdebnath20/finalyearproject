@@ -4,11 +4,6 @@ import { getTimeGreeting } from '../../utils/formatters';
 import {
   Bell,
   Menu,
-  Check,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  ArrowRight,
   LogOut,
   User as UserIcon,
   Sparkles,

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import type{
   User,
   UserRole,
@@ -459,7 +460,7 @@ export const UniversityProvider: React.FC<{ children: ReactNode }> = ({ children
       return { gpa: 8.8, cgpa: 8.9, passStatus: 'Pass' as const, totalSubjects: 0 };
     }
 
-    const totalPts = studentResults.reduce((acc, r) => acc + r.gradePoints, 0);
+    const totalPts = studentResults.reduce((acc, r) => acc + (r.gradePoints ?? 0), 0);
     const gpa = Number((totalPts / studentResults.length).toFixed(2));
     const hasFailed = studentResults.some(r => r.resultStatus === 'Fail');
 
@@ -678,7 +679,6 @@ export const UniversityProvider: React.FC<{ children: ReactNode }> = ({ children
     }));
 
     // Send notification to staff member
-    const staff = staffList.find(s => s.id === record.staffId);
     sendNotification({
       title: `Attendance ${approvalStatus}`,
       message: `Your attendance submission for ${record.date} was marked as ${approvalStatus} by University Administration.`,

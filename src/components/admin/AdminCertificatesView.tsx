@@ -6,13 +6,9 @@ import {
   Plus,
   Eye,
   Trash2,
-  CheckCircle2,
-  Download,
-  Calendar,
   User,
   ShieldCheck,
   X,
-  FileText,
   Upload,
   ArrowUp
 } from 'lucide-react';
@@ -26,7 +22,6 @@ interface AdminCertificatesViewProps {
 }
 
 export const AdminCertificatesView: React.FC<AdminCertificatesViewProps> = ({
-  onViewCertificate,
   onSelectStudent,
   isLoading
 }) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Student, StudentFeeRecord, Department } from '../../types';
+import type { Student, StudentFeeRecord, Department } from '../../types';
 import { generateFeeInvoicePDF } from '../../utils/pdfGenerator';
 import {
   Receipt,

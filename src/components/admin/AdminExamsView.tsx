@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useUniversity } from '../../context/UniversityContext';
-import type { Exam, ExamType, Student } from '../../types';
+import type { ExamType, Student } from '../../types';
 import { truncateEmail } from '../../utils/formatters';
 import {
   Search,

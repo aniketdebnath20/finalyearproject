@@ -3,7 +3,6 @@ import { useUniversity } from '../../context/UniversityContext';
 import {
   Bell,
   LogOut,
-  GraduationCap,
   ChevronDown,
   Menu,
   Check,

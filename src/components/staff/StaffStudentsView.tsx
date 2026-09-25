@@ -40,7 +40,7 @@ export const StaffStudentsView: React.FC<StaffStudentsViewProps> = ({ onSelectSt
     const matchesSearch =
       s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.rollNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.studentId.toLowerCase().includes(searchTerm.toLowerCase());
+      (s.studentId || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesSemester = semesterFilter === 'all' || s.semester.toString() === semesterFilter;
 

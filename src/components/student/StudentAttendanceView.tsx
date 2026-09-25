@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUniversity } from '../../context/UniversityContext';
-import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
