@@ -20,7 +20,7 @@ export const AdminReportPrintDocument: React.FC<AdminReportPrintDocumentProps> =
   studentAttendance,
   getStudentGPA,
   generatedAt = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-  reportRef = 'AUD-REG-2026-FAS'
+  reportRef = `AUD-REG-${new Date().getFullYear()}-FAS`
 }) => {
   // --- Financial Calculations ---
   const totalFees = feeRecords.reduce((sum, f) => sum + (f.totalFees || 0), 0);
@@ -51,12 +51,14 @@ export const AdminReportPrintDocument: React.FC<AdminReportPrintDocumentProps> =
     };
   });
 
-  // Itemized fee component estimates
-  const tuitionPortion = Math.round(totalFees * 0.65);
-  const labPortion = Math.round(totalFees * 0.18);
-  const libraryPortion = Math.round(totalFees * 0.06);
-  const examPortion = Math.round(totalFees * 0.06);
-  const amenityPortion = totalFees - (tuitionPortion + labPortion + libraryPortion + examPortion);
+  const feeStatusSummary = (['Fully Paid', 'Partially Paid', 'Unpaid'] as const).map(paymentStatus => {
+    const matchingRecords = feeRecords.filter(record => record.paymentStatus === paymentStatus);
+    return {
+      paymentStatus,
+      count: matchingRecords.length,
+      assessed: matchingRecords.reduce((sum, record) => sum + record.totalFees, 0)
+    };
+  });
 
   // --- Academic Calculations ---
   const totalStudents = students.length;
@@ -73,9 +75,12 @@ export const AdminReportPrintDocument: React.FC<AdminReportPrintDocumentProps> =
 
   let totalGpaSum = 0;
   let clearedScholarsCount = 0;
+  let gradedScholarsCount = 0;
 
   students.forEach(st => {
-    const { gpa, passStatus } = getStudentGPA(st.id);
+    const { gpa, passStatus, totalSubjects } = getStudentGPA(st.id);
+    if (!totalSubjects) return;
+    gradedScholarsCount++;
     totalGpaSum += gpa;
     if (passStatus === 'Pass') clearedScholarsCount++;
 
@@ -85,13 +90,13 @@ export const AdminReportPrintDocument: React.FC<AdminReportPrintDocumentProps> =
     else gpaBuckets[3].count++;
   });
 
-  const meanGpa = totalStudents > 0 ? (totalGpaSum / totalStudents).toFixed(2) : '0.00';
-  const passRate = totalStudents > 0 ? Math.round((clearedScholarsCount / totalStudents) * 100) : 0;
+  const meanGpa = gradedScholarsCount > 0 ? (totalGpaSum / gradedScholarsCount).toFixed(2) : '0.00';
+  const passRate = gradedScholarsCount > 0 ? Math.round((clearedScholarsCount / gradedScholarsCount) * 100) : 0;
 
   // Attendance Metrics
   const totalAttLogs = studentAttendance.length;
   const presentLogs = studentAttendance.filter(a => a.status === 'Present').length;
-  const overallAttRate = totalAttLogs ? Math.round((presentLogs / totalAttLogs) * 100) : 85;
+  const overallAttRate = totalAttLogs ? Math.round((presentLogs / totalAttLogs) * 100) : 0;
 
   return (
     <div className="admin-audit-print-document bg-white text-zinc-900 p-8 max-w-4xl mx-auto font-sans leading-relaxed text-xs">
@@ -107,7 +112,7 @@ export const AdminReportPrintDocument: React.FC<AdminReportPrintDocumentProps> =
                   OFFICIAL SENATE & FINANCIAL RECORD
                 </span>
                 <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">
-                  ACCREDITATION CYCLE 2025–2026
+                  ACCREDITATION CYCLE {new Date().getFullYear()}–{new Date().getFullYear() + 1}
                 </span>
               </div>
               <h1 className="font-serif text-2xl font-bold tracking-tight text-zinc-900 uppercase">
@@ -265,32 +270,18 @@ export const AdminReportPrintDocument: React.FC<AdminReportPrintDocumentProps> =
             </table>
           </div>
 
-          {/* Itemized Budget Allocation Summary */}
+          {/* Fee ledger status summary */}
           <div className="border border-zinc-200 p-3 bg-zinc-50/50 rounded-xs">
             <div className="font-mono text-[9px] uppercase tracking-wider text-zinc-500 font-bold mb-1.5">
-              Assessed Tuition Allocation Benchmark
+              Fee Ledger Status Summary
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[10px] font-mono">
-              <div className="border border-zinc-200 p-1.5 bg-white">
-                <span className="text-zinc-500 block text-[8px]">Instruction (65%)</span>
-                <strong className="text-zinc-900">₹{tuitionPortion.toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="border border-zinc-200 p-1.5 bg-white">
-                <span className="text-zinc-500 block text-[8px]">Lab & Tech (18%)</span>
-                <strong className="text-zinc-900">₹{labPortion.toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="border border-zinc-200 p-1.5 bg-white">
-                <span className="text-zinc-500 block text-[8px]">Library & Digital (6%)</span>
-                <strong className="text-zinc-900">₹{libraryPortion.toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="border border-zinc-200 p-1.5 bg-white">
-                <span className="text-zinc-500 block text-[8px]">Examinations (6%)</span>
-                <strong className="text-zinc-900">₹{examPortion.toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="border border-zinc-200 p-1.5 bg-white">
-                <span className="text-zinc-500 block text-[8px]">Amenities & Welfare (5%)</span>
-                <strong className="text-zinc-900">₹{amenityPortion.toLocaleString('en-IN')}</strong>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px] font-mono">
+              {feeStatusSummary.map(summary => (
+                <div key={summary.paymentStatus} className="border border-zinc-200 p-1.5 bg-white">
+                  <span className="text-zinc-500 block text-[8px]">{summary.paymentStatus} · {summary.count} ledgers</span>
+                  <strong className="text-zinc-900">₹{summary.assessed.toLocaleString('en-IN')}</strong>
+                </div>
+              ))}
             </div>
           </div>
         </section>

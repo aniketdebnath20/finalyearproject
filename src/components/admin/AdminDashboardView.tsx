@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUniversity } from '../../context/UniversityContext';
 import { getTimeGreeting } from '../../utils/formatters';
 import {
@@ -24,84 +24,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onNavigate,
   loading = false
 }) => {
-  const { students, staffList, courses, currentUser } = useUniversity();
-  const [isLoading, setIsLoading] = useState(true);
+  const { students, staffList, courses, subjects, fees, exams, notifications, currentUser, isDataLoading, refreshData } = useUniversity();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const dynamicGreeting = getTimeGreeting();
   const adminDisplayName = currentUser?.name?.split(' ')[0] || 'Admin';
 
-  // Initial simulated fetch on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 550);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      setIsLoading(false);
-    }, 650);
+    await refreshData();
+    setIsRefreshing(false);
   };
 
-  const isDataFetching = loading || isLoading || isRefreshing;
+  const isDataFetching = loading || isDataLoading || isRefreshing;
+  const collectedFees = fees.reduce((total, fee) => total + fee.feesPaid, 0);
+  const activeStaffCount = staffList.filter(staff => staff.accountStatus === 'Active').length;
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Upcoming exams list matching image 2
-  const upcomingExams = [
-    {
-      id: 'ex-1',
-      month: 'SEP',
-      day: '8',
-      title: 'Data Structures',
-      details: 'B.Tech Computer Science · 10:00 AM - 12:00 PM · Hall A-204',
-      badge: 'midterm',
-      badgeBg: 'bg-[#fef3c7] text-[#92400e]'
-    },
-    {
-      id: 'ex-2',
-      month: 'SEP',
-      day: '11',
-      title: 'Database Systems',
-      details: 'B.Tech Computer Science · 02:00 PM - 04:00 PM · Lab C-102',
-      badge: 'practical',
-      badgeBg: 'bg-[#ffedd5] text-[#9a3412]'
-    },
-    {
-      id: 'ex-3',
-      month: 'NOV',
-      day: '24',
-      title: 'Computer Networks',
-      details: 'B.Tech Computer Science · 10:00 AM - 01:00 PM · Main Auditorium',
-      badge: 'final',
-      badgeBg: 'bg-[#fef9c3] text-[#854d0e]'
-    }
-  ];
-
-  // Latest notices list matching image 2
-  const latestNotices = [
-    {
-      id: 'notif-1',
-      title: 'Mid-semester schedule published',
-      message: 'Your September examination schedule is now available.',
-      isUrgent: true
-    },
-    {
-      id: 'notif-2',
-      title: 'Fee payment reminder',
-      message: 'Your second semester installment is due on September 15.',
-      isUrgent: true
-    },
-    {
-      id: 'notif-3',
-      title: 'Certificate ready to download',
-      message: 'Your Academic Excellence Award certificate has been issued.',
-      isUrgent: false
-    }
-  ];
+  const upcomingExams = exams
+    .filter(exam => exam.examDate >= today)
+    .sort((a, b) => a.examDate.localeCompare(b.examDate))
+    .slice(0, 3)
+    .map(exam => {
+      const date = new Date(`${exam.examDate}T00:00:00`);
+      const subject = subjects.find(item => item.id === exam.subjectId);
+      const course = courses.find(item => item.id === exam.courseId);
+      return {
+        id: exam.id,
+        month: date.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
+        day: String(date.getDate()),
+        title: exam.examName,
+        details: `${subject?.subjectName || course?.courseName || 'Academic assessment'} · ${exam.startTime}–${exam.endTime} · ${exam.roomHall || 'Venue to be confirmed'}`,
+        badge: exam.examType,
+        badgeBg: 'bg-[#fef3c7] text-[#92400e]'
+      };
+    });
+  const latestNotices = notifications.filter(item => item.status !== 'cancelled').slice(0, 3);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -126,7 +84,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <span>•</span>
             <span className="font-mono text-zinc-800 font-semibold">{courses.length} Active Courses</span>
             <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline text-zinc-500 font-mono">Academic Term: Fall 2026</span>
+            <span className="hidden sm:inline text-zinc-500 font-mono">Academic year: {new Date().getFullYear()}</span>
           </div>
         </div>
 
@@ -165,9 +123,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                24
+                {students.length}
               </div>
-              <div className="text-xs text-zinc-400 mt-0.5">enrolled this year</div>
+              <div className="text-xs text-zinc-400 mt-0.5">registered students</div>
             </div>
           </div>
 
@@ -184,7 +142,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                6
+                {activeStaffCount}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">active faculty members</div>
             </div>
@@ -203,7 +161,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                5
+                {courses.length}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">across departments</div>
             </div>
@@ -222,9 +180,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                $177.0k
+                ₹{collectedFees.toLocaleString('en-IN')}
               </div>
-              <div className="text-xs text-zinc-400 mt-0.5">this academic year</div>
+              <div className="text-xs text-zinc-400 mt-0.5">recorded payments</div>
             </div>
           </div>
         </div>
@@ -256,7 +214,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             <div className="space-y-4">
-              {upcomingExams.map(item => (
+              {upcomingExams.length === 0 ? (
+                <p className="py-6 text-center text-xs text-zinc-400">No upcoming exams have been scheduled.</p>
+              ) : upcomingExams.map(item => (
                 <div
                   key={item.id}
                   onClick={() => onNavigate('exams')}
@@ -309,7 +269,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             <div className="space-y-4">
-              {latestNotices.map(notice => (
+              {latestNotices.length === 0 ? (
+                <p className="py-6 text-center text-xs text-zinc-400">There are no active notices.</p>
+              ) : latestNotices.map(notice => (
                 <div
                   key={notice.id}
                   onClick={() => onNavigate('notifications')}
@@ -317,7 +279,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 >
                   <span
                     className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${
-                      notice.isUrgent ? 'bg-[#ea580c]' : 'bg-[#cbd5e1]'
+                      notice.priority === 'urgent' || notice.priority === 'important' ? 'bg-[#ea580c]' : 'bg-[#cbd5e1]'
                     }`}
                   />
                   <div>

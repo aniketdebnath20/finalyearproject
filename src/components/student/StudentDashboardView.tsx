@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUniversity } from '../../context/UniversityContext';
 import {
   CalendarCheck2,
@@ -24,85 +24,40 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
   onNavigate,
   loading = false
 }) => {
-  const { currentStudent, courses, getStudentAttendanceSummary, getStudentFees } = useUniversity();
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentStudent, subjects, exams, notifications, getStudentAttendanceSummary, getStudentFees, isDataLoading, refreshData } = useUniversity();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Initial simulated fetch on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 550);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      setIsLoading(false);
-    }, 650);
+    await refreshData();
+    setIsRefreshing(false);
   };
 
-  const isDataFetching = loading || isLoading || isRefreshing;
+  const isDataFetching = loading || isDataLoading || isRefreshing;
 
-  const attendance = currentStudent ? getStudentAttendanceSummary(currentStudent.id) : { overallPercentage: 85 };
+  const attendance = currentStudent ? getStudentAttendanceSummary(currentStudent.id) : { overallPercentage: 0 };
   const feeRecord = currentStudent ? getStudentFees(currentStudent.id) : undefined;
-  const studentFeeRemaining = feeRecord?.feesRemaining || 61000;
-
-  // Upcoming exams list matching computer classes
-  const upcomingExams = [
-    {
-      id: 'ex-1',
-      month: 'SEP',
-      day: '8',
-      title: 'Java Full Stack Architecture',
-      details: 'Core Java & Spring Boot · 10:00 AM - 12:00 PM · Lab A-204',
-      badge: 'midterm',
-      badgeBg: 'bg-[#fef3c7] text-[#92400e]'
-    },
-    {
-      id: 'ex-2',
-      month: 'SEP',
-      day: '11',
-      title: 'DevOps & Docker Deployment',
-      details: 'CI/CD Pipelines & Kubernetes · 02:00 PM - 04:00 PM · Lab C-102',
-      badge: 'practical',
-      badgeBg: 'bg-[#ffedd5] text-[#9a3412]'
-    },
-    {
-      id: 'ex-3',
-      month: 'NOV',
-      day: '24',
-      title: 'Data Analytics & SQL Warehousing',
-      details: 'Python & Power BI Analytics · 10:00 AM - 01:00 PM · Main Tech Hall',
-      badge: 'final',
-      badgeBg: 'bg-[#fef9c3] text-[#854d0e]'
-    }
-  ];
-
-  // Latest notices list matching Image 1
-  const latestNotices = [
-    {
-      id: 'notif-1',
-      title: 'Mid-semester schedule published',
-      message: 'Your September examination schedule is now available.',
-      isUrgent: true
-    },
-    {
-      id: 'notif-2',
-      title: 'Fee payment reminder',
-      message: 'Your second semester installment is due on September 15.',
-      isUrgent: true
-    },
-    {
-      id: 'notif-3',
-      title: 'Certificate ready to download',
-      message: 'Your Academic Excellence Award certificate has been issued.',
-      isUrgent: false
-    }
-  ];
+  const studentFeeRemaining = feeRecord?.feesRemaining ?? 0;
+  const studentSubjects = subjects.filter(subject => subject.courseId === currentStudent?.courseId && subject.semester === currentStudent?.semester);
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingExams = exams
+    .filter(exam => exam.examDate >= today && (!currentStudent || (exam.courseId === currentStudent.courseId && exam.semester === currentStudent.semester)))
+    .sort((a, b) => a.examDate.localeCompare(b.examDate))
+    .slice(0, 3)
+    .map(exam => {
+      const date = new Date(`${exam.examDate}T00:00:00`);
+      const subject = subjects.find(item => item.id === exam.subjectId);
+      return {
+        id: exam.id,
+        month: date.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
+        day: String(date.getDate()),
+        title: exam.examName,
+        details: `${subject?.subjectName || 'Subject'} · ${exam.startTime}–${exam.endTime} · ${exam.roomHall || 'Venue to be confirmed'}`,
+        badge: exam.examType,
+        badgeBg: 'bg-[#fef3c7] text-[#92400e]'
+      };
+    });
+  const latestNotices = notifications.filter(item => item.status !== 'cancelled').slice(0, 3);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -155,7 +110,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                {attendance.overallPercentage || 85}%
+                {attendance.overallPercentage}%
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">term average</div>
             </div>
@@ -174,7 +129,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                {courses?.length || 4}
+                {studentSubjects.length}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">in your programme</div>
             </div>
@@ -193,7 +148,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                2
+                {upcomingExams.length}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">next 30 days</div>
             </div>
@@ -212,7 +167,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                ${(studentFeeRemaining).toLocaleString()}
+                ₹{studentFeeRemaining.toLocaleString('en-IN')}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">remaining to pay</div>
             </div>
@@ -246,7 +201,9 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             </div>
 
             <div className="space-y-4">
-              {upcomingExams.map(item => (
+              {upcomingExams.length === 0 ? (
+                <p className="py-6 text-center text-xs text-zinc-400">No upcoming exams are available for your programme.</p>
+              ) : upcomingExams.map(item => (
                 <div
                   key={item.id}
                   onClick={() => onNavigate('exams')}
@@ -299,7 +256,9 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             </div>
 
             <div className="space-y-4">
-              {latestNotices.map(notice => (
+              {latestNotices.length === 0 ? (
+                <p className="py-6 text-center text-xs text-zinc-400">There are no active notices.</p>
+              ) : latestNotices.map(notice => (
                 <div
                   key={notice.id}
                   onClick={() => onNavigate('notifications')}
@@ -307,7 +266,7 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                 >
                   <span
                     className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${
-                      notice.isUrgent ? 'bg-[#ea580c]' : 'bg-[#cbd5e1]'
+                      notice.priority === 'urgent' || notice.priority === 'important' ? 'bg-[#ea580c]' : 'bg-[#cbd5e1]'
                     }`}
                   />
                   <div>

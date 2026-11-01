@@ -18,10 +18,6 @@ export const StudentNotificationsView: React.FC<StudentNotificationsViewProps> =
   const [isScrolledTop, setIsScrolledTop] = useState(false);
   const [canScrollBottom, setCanScrollBottom] = useState(false);
 
-  if (isLoading || isDataLoading) {
-    return <StudentNotificationsSkeleton />;
-  }
-
   // Notifications targeted to student or campus-wide or specifically to current student
   const studentNotifs = useMemo(() => {
     return notifications.filter(n => {
@@ -49,6 +45,10 @@ export const StudentNotificationsView: React.FC<StudentNotificationsViewProps> =
   useEffect(() => {
     handleScroll();
   }, [studentNotifs]);
+
+  if (isLoading || isDataLoading) {
+    return <StudentNotificationsSkeleton />;
+  }
 
   return (
     <div

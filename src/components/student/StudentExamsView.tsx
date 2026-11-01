@@ -8,7 +8,7 @@ interface StudentExamsViewProps {
 }
 
 export const StudentExamsView: React.FC<StudentExamsViewProps> = ({ isLoading }) => {
-  const { currentStudent, exams, subjects, courses, isDataLoading } = useUniversity();
+  const { currentStudent, exams, subjects, courses, results, isDataLoading } = useUniversity();
 
   if (isLoading || isDataLoading) {
     return <StudentExamsSkeleton />;
@@ -17,14 +17,17 @@ export const StudentExamsView: React.FC<StudentExamsViewProps> = ({ isLoading })
   if (!currentStudent) return null;
 
   const currentCourse = courses.find(c => c.id === currentStudent.courseId);
-  const courseName = currentCourse?.courseName || 'Java Full Stack Development';
+  const courseName = currentCourse?.courseName || 'Programme not assigned';
 
   // Filter exams for student's course
   const relevantExams = exams.filter(
-    e => (e.courseId === currentStudent.courseId || !e.courseId) && e.isPublished
+    e => e.courseId === currentStudent.courseId && e.semester === currentStudent.semester && e.isPublished !== false
   );
 
   const today = new Date().toISOString().split('T')[0];
+  const completedResults = results
+    .filter(result => result.studentId === currentStudent.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   const upcomingExams = relevantExams
     .filter(e => e.examDate >= today)
@@ -44,7 +47,7 @@ export const StudentExamsView: React.FC<StudentExamsViewProps> = ({ isLoading })
             Examination Timetable & Schedule
           </h1>
           <p className="text-xs text-zinc-500 font-mono">
-            Evaluation timeline for Roll: <strong className="text-zinc-800">{currentStudent.rollNumber}</strong> • {courseName} (Java & OOPs)
+            Evaluation timeline for Roll: <strong className="text-zinc-800">{currentStudent.rollNumber}</strong> • {courseName} • Semester {currentStudent.semester}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -65,7 +68,7 @@ export const StudentExamsView: React.FC<StudentExamsViewProps> = ({ isLoading })
 
         {upcomingExams.length === 0 ? (
           <div className="p-8 rounded-xl bg-white border border-zinc-200 text-center text-xs text-zinc-400 font-mono">
-            No upcoming exams scheduled for this module track.
+            No upcoming exams are scheduled for your programme.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[calc(100vh-18rem)] overflow-y-auto overscroll-contain pr-1 custom-scrollbar scroll-smooth">
@@ -161,45 +164,21 @@ export const StudentExamsView: React.FC<StudentExamsViewProps> = ({ isLoading })
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 text-zinc-700 font-sans">
-                <tr className="hover:bg-zinc-50/60 transition-colors">
-                  <td className="py-3 px-4 font-medium text-zinc-900">
-                    Java OOPs Architecture & Design Patterns Comprehensive Evaluation
-                  </td>
-                  <td className="py-3 px-4 text-zinc-600">
-                    Object-Oriented Programming with Java (OOPs)
-                  </td>
-                  <td className="py-3 px-4 font-mono text-zinc-500">2025-12-18</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 font-mono text-[10px]">
-                      Theory
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
-                      <CheckCircle2 className="w-3 h-3" /> Complete
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-zinc-50/60 transition-colors">
-                  <td className="py-3 px-4 font-medium text-zinc-900">
-                    Java Multi-threading, Collections & JDBC Hands-on Lab Exam
-                  </td>
-                  <td className="py-3 px-4 text-zinc-600">
-                    Java Backend & Database Concurrency Lab
-                  </td>
-                  <td className="py-3 px-4 font-mono text-zinc-500">2025-12-12</td>
-                  <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 font-mono text-[10px]">
-                      Practical
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
-                      <CheckCircle2 className="w-3 h-3" /> Complete
-                    </span>
-                  </td>
-                </tr>
+                {completedResults.length === 0 ? (
+                  <tr><td colSpan={5} className="py-10 text-center text-xs text-zinc-400">No examination results have been recorded.</td></tr>
+                ) : completedResults.map(result => {
+                  const subject = subjects.find(item => item.id === result.subjectId);
+                  const exam = exams.find(item => item.id === result.examId);
+                  return (
+                    <tr key={result.id} className="hover:bg-zinc-50/60 transition-colors">
+                      <td className="py-3 px-4 font-medium text-zinc-900">{exam?.examName || subject?.subjectName || 'Assessment result'}</td>
+                      <td className="py-3 px-4 text-zinc-600">{subject?.subjectName || 'Subject not assigned'}</td>
+                      <td className="py-3 px-4 font-mono text-zinc-500">{exam?.examDate || result.createdAt.slice(0, 10)}</td>
+                      <td className="py-3 px-4"><span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 font-mono text-[10px]">{exam?.examType || 'Assessment'}</span></td>
+                      <td className="py-3 px-4"><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-100 text-zinc-700 border border-zinc-200 font-semibold">{result.grade || result.resultStatus || 'Recorded'}</span></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

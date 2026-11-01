@@ -42,6 +42,7 @@ export const AdminResultsView: React.FC<AdminResultsViewProps> = ({
     subjects,
     exams,
     results,
+    currentUser,
     saveResult,
     addToast,
     isDataLoading
@@ -52,12 +53,12 @@ export const AdminResultsView: React.FC<AdminResultsViewProps> = ({
 
   // Upload Result modal state
   const [isAddResultModalOpen, setIsAddResultModalOpen] = useState(false);
-  const [formStudentId, setFormStudentId] = useState(students[0]?.id || '');
-  const [formSubjectId, setFormSubjectId] = useState(subjects[0]?.id || '');
-  const [formInternal, setFormInternal] = useState(24);
-  const [formExternal, setFormExternal] = useState(45);
-  const [formPractical, setFormPractical] = useState(18);
-  const [formSemester, setFormSemester] = useState(6);
+  const [formStudentId, setFormStudentId] = useState('');
+  const [formSubjectId, setFormSubjectId] = useState('');
+  const [formInternal, setFormInternal] = useState(0);
+  const [formExternal, setFormExternal] = useState(0);
+  const [formPractical, setFormPractical] = useState(0);
+  const [formSemester, setFormSemester] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filter students based on search term
@@ -93,60 +94,20 @@ export const AdminResultsView: React.FC<AdminResultsViewProps> = ({
   // Compute completed exams for a given student
   const getStudentCompletedExams = (student: Student): CompletedExamItem[] => {
     const rawResults = results.filter(r => r.studentId === student.id);
-
-    if (rawResults.length > 0) {
-      return rawResults.map(r => {
-        const sub = subjects.find(s => s.id === r.subjectId);
-        const exam = exams.find(e => e.id === r.examId || (sub && e.subjectId === sub.id));
-        const course = courses.find(c => c.id === (exam?.courseId || sub?.courseId || student.courseId));
-
-        const courseName = course?.courseName || 'Java Full Stack Development';
-        const topicName = sub?.subjectName || 'Core Java Architecture';
-        const examName = exam?.examName || `${topicName} Examination`;
-        const examDateVal = exam?.examDate || r.createdAt?.split('T')[0] || '2026-09-22';
-        const totalMarksVal = exam?.totalMarks || 100;
-        const obtainedMarksVal = r.totalMarks ?? (r.internalMarks + r.externalMarks + r.practicalMarks);
-        const isPass = r.resultStatus === 'Pass' || (obtainedMarksVal >= (exam?.passingMarks || 40));
-
-        return {
-          id: r.id,
-          courseName,
-          examName,
-          topicName,
-          examDate: examDateVal,
-          totalMarks: totalMarksVal,
-          obtainedMarks: obtainedMarksVal,
-          status: isPass ? 'Pass' : 'Fail'
-        };
-      });
-    }
-
-    // Fallback: derive from student's enrolled course & relevant subjects
-    const studentCourse = courses.find(c => c.id === student.courseId) || courses[0];
-    const courseSubjects = subjects.filter(s => s.courseId === (studentCourse?.id || 'course-btech-cse'));
-    const subjectsToUse = courseSubjects.length > 0 ? courseSubjects : subjects.slice(0, 3);
-
-    return subjectsToUse.slice(0, 4).map((sub, idx) => {
-      const exam = exams.find(e => e.subjectId === sub.id);
-      const courseName = studentCourse?.courseName || 'Java Full Stack Development';
-      const topicName = sub.subjectName;
-      const examName = exam?.examName || `${topicName} Assessment Examination`;
-      const examDateVal = exam?.examDate || `2026-09-${18 + idx * 2}`;
-      const totalMarksVal = exam?.totalMarks || 100;
-
-      const seed = ((student.id.charCodeAt(student.id.length - 1) || 0) * 7 + idx * 13) % 32;
-      const obtainedMarksVal = Math.min(98, Math.max(38, 68 + seed));
-      const isPass = obtainedMarksVal >= 40;
-
+    return rawResults.map(result => {
+      const subject = subjects.find(item => item.id === result.subjectId);
+      const exam = exams.find(item => item.id === result.examId || item.subjectId === result.subjectId);
+      const course = courses.find(item => item.id === (exam?.courseId || subject?.courseId || student.courseId));
+      const obtainedMarks = result.totalMarks ?? result.internalMarks + result.externalMarks + result.practicalMarks;
       return {
-        id: `completed-${student.id}-${sub.id}`,
-        courseName,
-        examName,
-        topicName,
-        examDate: examDateVal,
-        totalMarks: totalMarksVal,
-        obtainedMarks: obtainedMarksVal,
-        status: isPass ? 'Pass' : 'Fail'
+        id: result.id,
+        courseName: course?.courseName || 'Unassigned course',
+        examName: exam?.examName || 'Assessment result',
+        topicName: subject?.subjectName || 'Unassigned subject',
+        examDate: exam?.examDate || result.createdAt.slice(0, 10),
+        totalMarks: exam?.totalMarks ?? 100,
+        obtainedMarks,
+        status: result.resultStatus || (obtainedMarks >= (exam?.passingMarks ?? 40) ? 'Pass' : 'Fail')
       };
     });
   };
@@ -177,11 +138,11 @@ export const AdminResultsView: React.FC<AdminResultsViewProps> = ({
         studentId: formStudentId,
         subjectId: formSubjectId,
         semester: Number(formSemester),
-        academicYear: '2025-2026',
+        academicYear: students.find(student => student.id === formStudentId)?.academicYear || String(new Date().getFullYear()),
         internalMarks: Number(formInternal),
         externalMarks: Number(formExternal),
         practicalMarks: Number(formPractical),
-        evaluatedByStaffId: 'ADMIN-REGISTRAR'
+        evaluatedByStaffId: currentUser?.id || ''
       });
 
       if (res.success) {

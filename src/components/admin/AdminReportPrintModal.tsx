@@ -85,7 +85,7 @@ export const AdminReportPrintModal: React.FC<AdminReportPrintModalProps> = ({
                   INSTITUTIONAL AUDIT & EXECUTIVE SUMMARY
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-[#e9bd68] font-mono font-semibold shrink-0">
-                  REF: AUD-REG-2026-FAS
+                  REF: AUD-REG-{new Date().getFullYear()}-FAS
                 </span>
               </div>
               <p className="text-[10px] text-zinc-400 font-mono hidden sm:block">

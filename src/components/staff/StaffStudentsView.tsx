@@ -31,10 +31,8 @@ export const StaffStudentsView: React.FC<StaffStudentsViewProps> = ({ onSelectSt
     }
   };
 
-  if (!currentStaff) return null;
-
   // Filter students under this faculty member's department
-  const myDeptStudents = students.filter(s => s.departmentId === currentStaff.departmentId);
+  const myDeptStudents = students.filter(s => s.departmentId === currentStaff?.departmentId);
 
   const filteredStudents = myDeptStudents.filter(s => {
     const matchesSearch =
@@ -50,6 +48,8 @@ export const StaffStudentsView: React.FC<StaffStudentsViewProps> = ({ onSelectSt
   useEffect(() => {
     handleScroll();
   }, [filteredStudents]);
+
+  if (!currentStaff) return null;
 
   return (
     <div className="h-[calc(100vh-9.5rem)] max-h-[calc(100vh-9.5rem)] flex flex-col overflow-hidden w-full space-y-3">

@@ -108,7 +108,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         {/* Quick Refresh Data Action with Loading Spinner */}
         <button
           id="topbar-refresh-data-btn"
-          onClick={() => refreshData(450)}
+          onClick={() => refreshData()}
           disabled={isDataLoading}
           className="p-2 rounded-full bg-white border border-[#e5dfd4] text-zinc-600 hover:text-zinc-900 shadow-2xs transition-colors relative cursor-pointer disabled:opacity-50"
           title="Refresh view data & synchronize"

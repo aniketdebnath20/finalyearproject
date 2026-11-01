@@ -9,14 +9,14 @@ interface StaffCertificatesViewProps {
 }
 
 export const StaffCertificatesView: React.FC<StaffCertificatesViewProps> = ({ onViewCertificate }) => {
-  const { currentStaff, students, certificates, issueCertificate } = useUniversity();
+  const { currentUser, students, certificates, issueCertificate } = useUniversity();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
-  const [studentId, setStudentId] = useState(students[0]?.id || '');
-  const [certificateTitle, setCertificateTitle] = useState('Certificate of Academic Merit in Algorithms');
+  const [studentId, setStudentId] = useState('');
+  const [certificateTitle, setCertificateTitle] = useState('');
   const [certificateType, setCertificateType] = useState<CertificateType>('Merit');
-  const [description, setDescription] = useState('Awarded for achieving the highest percentile in advanced algorithmic computation.');
+  const [description, setDescription] = useState('');
   const [isIssued, setIsIssued] = useState(false);
 
   // Scroll tracking for fade effect and quick scroll to top
@@ -63,7 +63,7 @@ export const StaffCertificatesView: React.FC<StaffCertificatesViewProps> = ({ on
       studentId,
       certificateTitle,
       certificateType,
-      issuedByStaffId: currentStaff?.id || 'STF-101',
+      issuedByStaffId: currentUser?.id || '',
       description
     });
 

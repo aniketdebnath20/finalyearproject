@@ -23,11 +23,11 @@ export const StudentFeesView: React.FC<StudentFeesViewProps> = ({ isLoading }) =
   const fee = getStudentFees(currentStudent.id);
   const studentDept = departments.find(d => d.id === currentStudent.departmentId);
 
-  const totalFees = fee?.totalFees || 80000;
+  const totalFees = fee?.totalFees ?? 0;
   const feesPaid = fee?.feesPaid || 0;
-  const feesRemaining = fee?.feesRemaining || (totalFees - feesPaid);
+  const feesRemaining = fee?.feesRemaining ?? Math.max(0, totalFees - feesPaid);
   const percentagePaid = totalFees > 0 ? Math.round((feesPaid / totalFees) * 100) : 0;
-  const paymentStatus = fee?.paymentStatus || (feesRemaining === 0 ? 'Fully Paid' : feesPaid > 0 ? 'Partially Paid' : 'Unpaid');
+  const paymentStatus = fee?.paymentStatus ?? (totalFees === 0 ? 'Unpaid' : feesRemaining === 0 ? 'Fully Paid' : feesPaid > 0 ? 'Partially Paid' : 'Unpaid');
 
   const history = fee?.paymentHistory || [];
 
@@ -53,7 +53,7 @@ export const StudentFeesView: React.FC<StudentFeesViewProps> = ({ isLoading }) =
             Tuition Ledger & Payments
           </h1>
           <p className="text-xs text-zinc-500 font-mono">
-            Roll: <strong className="text-zinc-800">{currentStudent.rollNumber}</strong> • Academic Year {fee?.academicYear || '2025–2026'}
+            Roll: <strong className="text-zinc-800">{currentStudent.rollNumber}</strong> • Academic Year {fee?.academicYear || currentStudent.academicYear}
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export const StudentFeesView: React.FC<StudentFeesViewProps> = ({ isLoading }) =
             <span className="text-2xl font-mono font-semibold text-zinc-900 block mt-1">
               ₹{feesRemaining.toLocaleString()}
             </span>
-            <span className="text-[11px] text-zinc-500 font-mono mt-0.5 block">Due: {fee?.dueDate || '30 Sep 2026'}</span>
+            <span className="text-[11px] text-zinc-500 font-mono mt-0.5 block">Due: {fee?.dueDate || 'Not set'}</span>
           </div>
 
           <div className="p-4 rounded-lg bg-zinc-50 border border-zinc-200/80">

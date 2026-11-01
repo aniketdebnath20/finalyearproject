@@ -9,20 +9,10 @@ import {
   Check
 } from 'lucide-react';
 
-// Deterministic pseudo-random generator based on string seed
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-// Institutional simulated current date: September 23, 2026
-const CURRENT_ACADEMIC_YEAR = 2026;
-const CURRENT_ACADEMIC_MONTH = 8; // 0-indexed: 8 = September
-const SIMULATED_TODAY_STR = '2026-09-23';
+const TODAY = new Date();
+const CURRENT_ACADEMIC_YEAR = TODAY.getFullYear();
+const CURRENT_ACADEMIC_MONTH = TODAY.getMonth();
+const TODAY_STR = TODAY.toISOString().slice(0, 10);
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_NAMES = [
@@ -46,8 +36,7 @@ export const StudentAttendanceCalendarModal: React.FC<StudentAttendanceCalendarM
 
   const [currentYear, setCurrentYear] = useState(CURRENT_ACADEMIC_YEAR);
   const [currentMonth, setCurrentMonth] = useState(CURRENT_ACADEMIC_MONTH);
-
-  if (!student) return null;
+  const studentId = student?.id;
 
   const prevMonth = () => {
     if (currentMonth === 0) {
@@ -105,22 +94,23 @@ export const StudentAttendanceCalendarModal: React.FC<StudentAttendanceCalendarM
         dateStr,
         isCurrentMonth: false,
         isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-        isToday: dateStr === SIMULATED_TODAY_STR,
-        isFuture: dateStr > SIMULATED_TODAY_STR
+        isToday: dateStr === TODAY_STR,
+        isFuture: dateStr > TODAY_STR
       });
     }
 
     let presentCount = 0;
     let absentCount = 0;
     let workingDaysCount = 0;
+    let recordedDaysCount = 0;
 
     // Current month days
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const isToday = dateStr === SIMULATED_TODAY_STR;
-      const isFuture = dateStr > SIMULATED_TODAY_STR;
+      const isToday = dateStr === TODAY_STR;
+      const isFuture = dateStr > TODAY_STR;
 
       let status: 'Present' | 'Absent' | undefined = undefined;
 
@@ -129,15 +119,12 @@ export const StudentAttendanceCalendarModal: React.FC<StudentAttendanceCalendarM
 
         // Check real student attendance context
         const existingRecord = studentAttendance.find(
-          r => r.studentId === student.id && r.date === dateStr
+          r => r.studentId === studentId && r.date === dateStr
         );
 
         if (existingRecord) {
-          status = existingRecord.status === 'Absent' ? 'Absent' : 'Present';
-        } else {
-          // Deterministic hash based on student + date
-          const hash = hashString(`${student.id}-${dateStr}`) % 100;
-          status = hash < 84 ? 'Present' : 'Absent';
+          recordedDaysCount++;
+          status = existingRecord.status === 'Absent' || existingRecord.status === 'Half Day' ? 'Absent' : 'Present';
         }
 
         if (status === 'Present') presentCount++;
@@ -167,14 +154,12 @@ export const StudentAttendanceCalendarModal: React.FC<StudentAttendanceCalendarM
         dateStr,
         isCurrentMonth: false,
         isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-        isToday: dateStr === SIMULATED_TODAY_STR,
+        isToday: dateStr === TODAY_STR,
         isFuture: true
       });
     }
 
-    const percentage = workingDaysCount > 0
-      ? Math.round((presentCount / workingDaysCount) * 100)
-      : 100;
+    const percentage = recordedDaysCount > 0 ? Math.round((presentCount / recordedDaysCount) * 100) : 0;
 
     return {
       calendarGrid: grid,
@@ -185,7 +170,9 @@ export const StudentAttendanceCalendarModal: React.FC<StudentAttendanceCalendarM
         percentage
       }
     };
-  }, [currentYear, currentMonth, student.id, studentAttendance]);
+  }, [currentYear, currentMonth, studentId, studentAttendance]);
+
+  if (!student) return null;
 
   const isCurrentMonthView =
     currentYear === CURRENT_ACADEMIC_YEAR && currentMonth === CURRENT_ACADEMIC_MONTH;
@@ -399,8 +386,7 @@ export const StaffAttendanceCalendarModal: React.FC<StaffAttendanceCalendarModal
 
   const [currentYear, setCurrentYear] = useState(CURRENT_ACADEMIC_YEAR);
   const [currentMonth, setCurrentMonth] = useState(CURRENT_ACADEMIC_MONTH);
-
-  if (!staff) return null;
+  const staffId = staff?.id;
 
   const prevMonth = () => {
     if (currentMonth === 0) {
@@ -456,8 +442,8 @@ export const StaffAttendanceCalendarModal: React.FC<StaffAttendanceCalendarModal
         dateStr,
         isCurrentMonth: false,
         isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-        isToday: dateStr === SIMULATED_TODAY_STR,
-        isFuture: dateStr > SIMULATED_TODAY_STR
+        isToday: dateStr === TODAY_STR,
+        isFuture: dateStr > TODAY_STR
       });
     }
 
@@ -465,14 +451,15 @@ export const StaffAttendanceCalendarModal: React.FC<StaffAttendanceCalendarModal
     let halfDayCount = 0;
     let absentCount = 0;
     let workingDaysCount = 0;
+    let recordedDaysCount = 0;
 
     // Current month days
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const isToday = dateStr === SIMULATED_TODAY_STR;
-      const isFuture = dateStr > SIMULATED_TODAY_STR;
+      const isToday = dateStr === TODAY_STR;
+      const isFuture = dateStr > TODAY_STR;
 
       let status: 'Present' | 'Half Day' | 'Absent' | undefined = undefined;
 
@@ -481,26 +468,17 @@ export const StaffAttendanceCalendarModal: React.FC<StaffAttendanceCalendarModal
 
         // Check real staff attendance context
         const existingRecord = staffAttendance.find(
-          r => r.staffId === staff.id && r.date === dateStr
+          r => r.staffId === staffId && r.date === dateStr
         );
 
         if (existingRecord) {
+          recordedDaysCount++;
           if (existingRecord.status === 'Half Day' || existingRecord.status === 'Half-Day') {
             status = 'Half Day';
           } else if (existingRecord.status === 'Leave' || (existingRecord.status as string) === 'Absent') {
             status = 'Absent';
           } else {
             status = 'Present';
-          }
-        } else {
-          // Deterministic calculation for faculty records
-          const hash = hashString(`${staff.id}-${dateStr}`) % 100;
-          if (hash < 85) {
-            status = 'Present';
-          } else if (hash < 93) {
-            status = 'Half Day';
-          } else {
-            status = 'Absent';
           }
         }
 
@@ -532,14 +510,14 @@ export const StaffAttendanceCalendarModal: React.FC<StaffAttendanceCalendarModal
         dateStr,
         isCurrentMonth: false,
         isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-        isToday: dateStr === SIMULATED_TODAY_STR,
+        isToday: dateStr === TODAY_STR,
         isFuture: true
       });
     }
 
-    const percentage = workingDaysCount > 0
-      ? Math.round(((presentCount + halfDayCount * 0.5) / workingDaysCount) * 100)
-      : 100;
+    const percentage = recordedDaysCount > 0
+      ? Math.round(((presentCount + halfDayCount * 0.5) / recordedDaysCount) * 100)
+      : 0;
 
     return {
       calendarGrid: grid,
@@ -551,7 +529,9 @@ export const StaffAttendanceCalendarModal: React.FC<StaffAttendanceCalendarModal
         percentage
       }
     };
-  }, [currentYear, currentMonth, staff.id, staffAttendance]);
+  }, [currentYear, currentMonth, staffId, staffAttendance]);
+
+  if (!staff) return null;
 
   const isCurrentMonthView =
     currentYear === CURRENT_ACADEMIC_YEAR && currentMonth === CURRENT_ACADEMIC_MONTH;

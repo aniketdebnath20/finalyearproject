@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useUniversity } from '../../context/UniversityContext';
-import { BookOpen, Search, ExternalLink, Users, ArrowUp } from 'lucide-react';
+import { BookOpen, Search, ExternalLink, Users, ArrowUp, Plus, X } from 'lucide-react';
 import { MasterViewSkeleton } from '../common/Skeleton';
 import { truncateEmail } from '../../utils/formatters';
 
@@ -13,8 +13,19 @@ export const AdminCoursesDepartmentsView: React.FC<AdminCoursesDepartmentsViewPr
   onSelectStudent,
   isLoading
 }) => {
-  const { students, courses, isDataLoading } = useUniversity();
+  const { students, courses, departments, staffList, addDepartment, addCourse, addSubject, isDataLoading } = useUniversity();
   const [searchTerm, setSearchTerm] = useState('');
+  const [setupType, setSetupType] = useState<'department' | 'course' | 'subject' | null>(null);
+  const [recordName, setRecordName] = useState('');
+  const [recordCode, setRecordCode] = useState('');
+  const [recordDescription, setRecordDescription] = useState('');
+  const [departmentHead, setDepartmentHead] = useState('');
+  const [courseDuration, setCourseDuration] = useState('');
+  const [recordSemester, setRecordSemester] = useState(1);
+  const [recordCredits, setRecordCredits] = useState(0);
+  const [recordDepartmentId, setRecordDepartmentId] = useState('');
+  const [recordCourseId, setRecordCourseId] = useState('');
+  const [recordStaffId, setRecordStaffId] = useState('');
 
   // Scroll tracking for fade effect and quick scroll to top
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -32,6 +43,50 @@ export const AdminCoursesDepartmentsView: React.FC<AdminCoursesDepartmentsViewPr
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const openSetupForm = (type: 'department' | 'course' | 'subject') => {
+    setSetupType(type);
+    setRecordName('');
+    setRecordCode('');
+    setRecordDescription('');
+    setDepartmentHead('');
+    setCourseDuration('');
+    setRecordSemester(1);
+    setRecordCredits(0);
+    setRecordDepartmentId(departments[0]?.id || '');
+    setRecordCourseId(courses[0]?.id || '');
+    setRecordStaffId(staffList[0]?.id || '');
+  };
+
+  const handleSetupSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (setupType === 'department') {
+      addDepartment({ name: recordName, code: recordCode, headOfDepartment: departmentHead, description: recordDescription });
+    } else if (setupType === 'course') {
+      addCourse({
+        courseCode: recordCode,
+        courseName: recordName,
+        departmentId: recordDepartmentId,
+        duration: courseDuration,
+        semester: recordSemester,
+        credits: recordCredits,
+        description: recordDescription
+      });
+    } else if (setupType === 'subject') {
+      const course = courses.find(item => item.id === recordCourseId);
+      if (!course) return;
+      addSubject({
+        subjectCode: recordCode,
+        subjectName: recordName,
+        courseId: course.id,
+        departmentId: course.departmentId,
+        semester: recordSemester,
+        credits: recordCredits,
+        staffId: recordStaffId
+      });
+    }
+    setSetupType(null);
   };
 
   // Filter students and their taken courses based solely on the search bar
@@ -89,6 +144,17 @@ export const AdminCoursesDepartmentsView: React.FC<AdminCoursesDepartmentsViewPr
           <p className="text-xs text-zinc-500 font-mono">
             Directory of enrolled students and their assigned academic courses
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          <button type="button" onClick={() => openSetupForm('department')} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">
+            <Plus className="w-3.5 h-3.5" /> Department
+          </button>
+          <button type="button" onClick={() => openSetupForm('course')} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">
+            <Plus className="w-3.5 h-3.5" /> Course
+          </button>
+          <button type="button" onClick={() => openSetupForm('subject')} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-900 text-xs font-semibold text-white hover:bg-zinc-800 cursor-pointer">
+            <Plus className="w-3.5 h-3.5" /> Subject
+          </button>
         </div>
       </div>
 
@@ -256,6 +322,96 @@ export const AdminCoursesDepartmentsView: React.FC<AdminCoursesDepartmentsViewPr
           )}
         </div>
       </div>
+
+      {setupType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="w-full max-w-xl rounded-xl border border-zinc-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-900 capitalize">Create {setupType}</h2>
+                <p className="mt-1 text-xs text-zinc-500">The record will be saved to the academic database.</p>
+              </div>
+              <button type="button" onClick={() => setSetupType(null)} className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 cursor-pointer" aria-label="Close">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSetupSubmit} className="space-y-4 p-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="text-[10px] font-mono uppercase text-zinc-500">
+                  {setupType === 'department' ? 'Department name' : setupType === 'course' ? 'Course name' : 'Subject name'}
+                  <input required value={recordName} onChange={event => setRecordName(event.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                </label>
+                <label className="text-[10px] font-mono uppercase text-zinc-500">
+                  {setupType === 'department' ? 'Department code' : setupType === 'course' ? 'Course code' : 'Subject code'}
+                  <input required value={recordCode} onChange={event => setRecordCode(event.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-mono normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                </label>
+                {setupType === 'department' && (
+                  <>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500 sm:col-span-2">
+                      Department head
+                      <input required value={departmentHead} onChange={event => setDepartmentHead(event.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                    </label>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500 sm:col-span-2">
+                      Description
+                      <textarea value={recordDescription} onChange={event => setRecordDescription(event.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                    </label>
+                  </>
+                )}
+                {setupType === 'course' && (
+                  <>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Department
+                      <select required value={recordDepartmentId} onChange={event => setRecordDepartmentId(event.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900">
+                        <option value="">Select department</option>{departments.map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Duration
+                      <input required value={courseDuration} onChange={event => setCourseDuration(event.target.value)} placeholder="e.g. 4 years" className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                    </label>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Semesters
+                      <input type="number" min={1} required value={recordSemester} onChange={event => setRecordSemester(Number(event.target.value))} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                    </label>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Credits
+                      <input type="number" min={0} required value={recordCredits} onChange={event => setRecordCredits(Number(event.target.value))} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                    </label>
+                  </>
+                )}
+                {setupType === 'subject' && (
+                  <>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Course
+                      <select required value={recordCourseId} onChange={event => setRecordCourseId(event.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900">
+                        <option value="">Select course</option>{courses.map(course => <option key={course.id} value={course.id}>{course.courseName}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Faculty member
+                      <select required value={recordStaffId} onChange={event => setRecordStaffId(event.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans normal-case text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900">
+                        <option value="">Select staff</option>{staffList.map(staff => <option key={staff.id} value={staff.id}>{staff.staffName}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Semester
+                      <input type="number" min={1} required value={recordSemester} onChange={event => setRecordSemester(Number(event.target.value))} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                    </label>
+                    <label className="text-[10px] font-mono uppercase text-zinc-500">
+                      Credits
+                      <input type="number" min={0} required value={recordCredits} onChange={event => setRecordCredits(Number(event.target.value))} className="mt-1 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-sans text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900" />
+                    </label>
+                  </>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 border-t border-zinc-100 pt-3">
+                <button type="button" onClick={() => setSetupType(null)} className="rounded-lg bg-zinc-100 px-3.5 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-200 cursor-pointer">Cancel</button>
+                <button type="submit" disabled={(setupType !== 'department' && !departments.length) || (setupType === 'subject' && (!courses.length || !staffList.length))} className="rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer">Save {setupType}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

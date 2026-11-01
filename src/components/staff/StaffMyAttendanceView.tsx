@@ -16,10 +16,10 @@ export const StaffMyAttendanceView: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
 
   const [date, setDate] = useState(today);
-  const [checkInTime, setCheckInTime] = useState('08:30');
-  const [checkOutTime, setCheckOutTime] = useState('16:45');
+  const [checkInTime, setCheckInTime] = useState('');
+  const [checkOutTime, setCheckOutTime] = useState('');
   const [status, setStatus] = useState<StaffAttendanceStatus>('Present');
-  const [note, setNote] = useState('Conducted morning Computer Networks laboratory and afternoon theoretical lecture.');
+  const [note, setNote] = useState('');
   const [submittedMessage, setSubmittedMessage] = useState(false);
 
   // Scroll tracking for fade effect and quick scroll to top

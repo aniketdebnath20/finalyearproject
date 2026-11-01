@@ -2,6 +2,21 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Application Setup
+
+The Express and Mongoose API is in `C:\Users\Admin\classes-portal-backend`, outside this frontend project. Start MongoDB locally or create a MongoDB Atlas database, then configure the backend:
+
+```powershell
+Set-Location "$HOME\classes-portal-backend"
+Copy-Item .env.example .env
+npm install
+npm run dev
+```
+
+Edit `.env` with the MongoDB URI, a random `JWT_SECRET` of at least 32 characters, and the first administrator's email and password. Keep this file private. In another terminal, start the frontend from `D:\finalyearproject` with `npm run dev`; Vite proxies `/api` to `http://localhost:5000`.
+
+The database starts empty. Sign in using the environment-configured administrator account, then create departments and courses before registering staff and students. Student and staff passwords are set when their accounts are created. No demo records are generated or loaded from browser storage.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

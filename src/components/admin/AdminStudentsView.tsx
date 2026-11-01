@@ -46,29 +46,33 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ onSelectSt
   // Form states
   const [fullName, setFullName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
+  const [initialPassword, setInitialPassword] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [departmentId, setDepartmentId] = useState(departments[0]?.id || '');
   const [courseId, setCourseId] = useState(courses[0]?.id || '');
-  const [academicYear, setAcademicYear] = useState('2025-2029');
-  const [dateOfBirth, setDateOfBirth] = useState('2004-05-12');
-  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>('Male');
-  const [address, setAddress] = useState('100 University Avenue');
-  const [profilePhoto, setProfilePhoto] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80');
+  const [semester, setSemester] = useState(1);
+  const [academicYear, setAcademicYear] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>('Other');
+  const [address, setAddress] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState('');
 
   const openAddModal = () => {
     setEditingStudent(null);
     setFullName('');
-    setRollNumber(`CS2025-00${students.length + 1}`);
+    setRollNumber(`STU-${new Date().getFullYear()}-${String(students.length + 1).padStart(4, '0')}`);
+    setInitialPassword('');
     setEmail('');
-    setPhone('+1 (555) 234-5678');
+    setPhone('');
     setDepartmentId(departments[0]?.id || '');
     setCourseId(courses[0]?.id || '');
-    setAcademicYear('2025-2029');
-    setDateOfBirth('2005-06-15');
-    setGender('Male');
-    setAddress('Apex Campus Dormitory, Block B');
-    setProfilePhoto('https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80');
+    setSemester(1);
+    setAcademicYear('');
+    setDateOfBirth('');
+    setGender('Other');
+    setAddress('');
+    setProfilePhoto('');
     setIsModalOpen(true);
   };
 
@@ -76,15 +80,17 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ onSelectSt
     setEditingStudent(student);
     setFullName(student.fullName);
     setRollNumber(student.rollNumber);
+    setInitialPassword('');
     setEmail(student.email);
     setPhone(student.phone);
     setDepartmentId(student.departmentId);
     setCourseId(student.courseId);
+    setSemester(student.semester);
     setAcademicYear(student.academicYear);
     setDateOfBirth(student.dateOfBirth);
     setGender(student.gender);
     setAddress(student.address);
-    setProfilePhoto(student.profilePhoto);
+    setProfilePhoto(student.profilePhoto || '');
     setIsModalOpen(true);
   };
 
@@ -99,13 +105,14 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ onSelectSt
         phone,
         departmentId,
         courseId,
-        semester: editingStudent.semester,
+        semester,
         academicYear,
         dateOfBirth,
         gender,
         address,
         profilePhoto,
-        accountStatus: editingStudent.accountStatus
+        accountStatus: editingStudent.accountStatus,
+        ...(initialPassword ? { password: initialPassword } : {})
       });
     } else {
       addStudent({
@@ -115,14 +122,15 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ onSelectSt
         phone,
         departmentId,
         courseId,
-        semester: 1,
+        semester,
         academicYear,
         admissionDate: new Date().toISOString().split('T')[0],
         dateOfBirth,
         gender,
         address,
         profilePhoto,
-        accountStatus: 'Active'
+        accountStatus: 'Active',
+        password: initialPassword
       });
     }
 
@@ -354,6 +362,21 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ onSelectSt
                 </div>
 
                 <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">
+                    {editingStudent ? 'Set New Password (optional)' : 'Initial Password'}
+                  </label>
+                  <input
+                    type="password"
+                    required={!editingStudent}
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={initialPassword}
+                    onChange={e => setInitialPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+
+                <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Email Address</label>
                   <input
                     type="email"
@@ -378,10 +401,12 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ onSelectSt
                 <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Department</label>
                   <select
+                    required
                     value={departmentId}
                     onChange={e => setDepartmentId(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   >
+                    <option value="">Select department</option>
                     {departments.map(d => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
@@ -391,13 +416,59 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ onSelectSt
                 <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Program</label>
                   <select
+                    required
                     value={courseId}
                     onChange={e => setCourseId(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   >
+                    <option value="">Select programme</option>
                     {courses.map(c => (
                       <option key={c.id} value={c.id}>{c.courseName}</option>
                     ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Academic Year</label>
+                  <input
+                    type="text"
+                    required
+                    value={academicYear}
+                    onChange={e => setAcademicYear(e.target.value)}
+                    placeholder="e.g. 2026-2030"
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Semester</label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={semester}
+                    onChange={e => setSemester(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Date of Birth</label>
+                  <input
+                    type="date"
+                    required
+                    value={dateOfBirth}
+                    onChange={e => setDateOfBirth(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Gender</label>
+                  <select value={gender} onChange={e => setGender(e.target.value as typeof gender)} className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
 

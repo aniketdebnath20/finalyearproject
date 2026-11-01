@@ -11,13 +11,11 @@ import { useUniversity } from '../../context/UniversityContext';
 interface HomePageProps {
   onGoToLogin: () => void;
   onGoToPortal: () => void;
-  onQuickLogin?: (role: 'student' | 'staff' | 'admin') => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
   onGoToLogin,
-  onGoToPortal,
-  onQuickLogin
+  onGoToPortal
 }) => {
   const { currentUser, logout } = useUniversity();
 
@@ -134,36 +132,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                   <ArrowRight className="size-4 text-[#deb360]" />
                 </button>
 
-                {onQuickLogin && (
-                  <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 sm:gap-2.5 pt-2 sm:pt-3 text-xs text-zinc-600 w-full">
-                    <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
-                      Direct Portal Access:
-                    </span>
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onQuickLogin('student')}
-                        className="px-3 py-2 sm:py-1.5 rounded-lg border border-[#ded8cb] bg-white hover:bg-[#f3efe6] text-zinc-700 font-semibold transition cursor-pointer shadow-2xs hover:border-zinc-400 text-xs"
-                      >
-                        Student Portal
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onQuickLogin('staff')}
-                        className="px-3 py-2 sm:py-1.5 rounded-lg border border-[#ded8cb] bg-white hover:bg-[#f3efe6] text-zinc-700 font-semibold transition cursor-pointer shadow-2xs hover:border-zinc-400 text-xs"
-                      >
-                        Faculty & Tutors
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onQuickLogin('admin')}
-                        className="px-3 py-2 sm:py-1.5 rounded-lg border border-[#ded8cb] bg-white hover:bg-[#f3efe6] text-zinc-700 font-semibold transition cursor-pointer shadow-2xs hover:border-zinc-400 text-xs"
-                      >
-                        Classes Admin
-                      </button>
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>

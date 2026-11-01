@@ -50,7 +50,7 @@ import { AdminAttendanceView } from './components/admin/AdminAttendanceView';
 import { MasterViewSkeleton } from './components/common/Skeleton';
 
 const MainApplication: React.FC = () => {
-  const { currentUser, certificates, students, quickLogin, logout, addToast, isDataLoading } = useUniversity();
+  const { currentUser, certificates, students, logout, addToast, isDataLoading } = useUniversity();
 
   const [pageView, setPageView] = useState<'home' | 'login' | 'portal'>('home');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -111,10 +111,6 @@ const MainApplication: React.FC = () => {
             } else {
               setPageView('login');
             }
-          }}
-          onQuickLogin={(role) => {
-            quickLogin(role);
-            setPageView('portal');
           }}
         />
         <ToastContainer />

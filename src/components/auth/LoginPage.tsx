@@ -14,44 +14,36 @@ interface LoginPageProps {
 } 
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
-  const { loginAsStudent, loginAsStaff, loginAsAdmin, quickLogin, students, staffList } = useUniversity();
+  const { loginAsStudent, loginAsStaff, loginAsAdmin } = useUniversity();
 
   const [activeTab, setActiveTab] = useState<UserRole> ('student');
 
   // Form states
-  const [studentName, setStudentName] = useState('Alexander Wright');
-  const [studentRoll, setStudentRoll] = useState('CS2024-001');
+  const [studentName, setStudentName] = useState('');
+  const [studentRoll, setStudentRoll] = useState('');
 
-  const [staffUsername, setStaffUsername] = useState('STF-101');
-  const [staffPassword, setStaffPassword] = useState('password123');
+  const [staffUsername, setStaffUsername] = useState('');
+  const [staffName, setStaffName] = useState('');
 
-  const [adminUsername, setAdminUsername] = useState('admin@northbridge.edu');
-  const [adminPassword, setAdminPassword] = useState('password123');
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
 
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      let success = false;
-      if (activeTab === 'student') {
-        success = loginAsStudent(studentName, studentRoll);
-      } else if (activeTab === 'staff') {
-        success = loginAsStaff(staffUsername, staffPassword);
-      } else if (activeTab === 'admin') {
-        success = loginAsAdmin(adminUsername, adminPassword);
-      }
-
-      if (!success) {
-        setErrorMsg('Authentication failed. Please check your credentials or click a demo account below.');
-      }
-      setIsLoading(false);
-    }, 250);
+    const success = activeTab === 'student'
+      ? await loginAsStudent(studentName, studentRoll)
+      : activeTab === 'staff'
+      ? await loginAsStaff(staffUsername, staffName)
+      : await loginAsAdmin(adminUsername, adminPassword);
+    if (!success) setErrorMsg('Sign-in failed. Check your credentials and try again.');
+    setIsLoading(false);
   };
 
   return (
@@ -126,9 +118,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
               <h1 className="text-xl font-extrabold text-[#222f3b]">
                 Sign in to Apex Classes
               </h1>
-              <p className="mt-1 text-xs text-[#78827e]">
-                Enter your credentials or choose your portal role below.
-              </p>
+              <p className="mt-1 text-xs text-[#78827e]">Sign in with your registered account credentials.</p>
             </div>
 
             {/* Role Switcher Tabs */}
@@ -180,29 +170,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
               </button>
             </div>
 
-            {/* Role indication & credential auto-fill helper */}
-            <div className="mt-3 flex items-center justify-between text-[11px] text-[#78827e]">
+            <div className="mt-3 text-[11px] text-[#78827e]">
               <span>
                 Signing in as: <strong className="text-[#222f3b] font-bold capitalize">{activeTab === 'staff' ? 'Faculty / Staff' : activeTab}</strong>
               </span>
-              <button
-                type="button"
-                onClick={() => {
-                  if (activeTab === 'student') {
-                    setStudentName('Alexander Wright');
-                    setStudentRoll('CS2024-001');
-                  } else if (activeTab === 'staff') {
-                    setStaffUsername('STF-101');
-                    setStaffPassword('password123');
-                  } else {
-                    setAdminUsername('admin@northbridge.edu');
-                    setAdminPassword('password123');
-                  }
-                }}
-                className="text-[#2f766d] hover:underline font-semibold cursor-pointer"
-              >
-                Fill sample credentials
-              </button>
             </div>
 
             {/* Authentication Form */}
@@ -227,7 +198,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
                       required
                       value={studentName}
                       onChange={e => setStudentName(e.target.value)}
-                      placeholder="e.g. Alexander Wright"
+                      placeholder="Your registered full name"
                       className="w-full rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] px-3.5 py-2.5 text-sm text-[#222f3b] placeholder-[#78827e] focus:border-[#2f766d] focus:outline-none focus:ring-1 focus:ring-[#2f766d] transition"
                     />
                   </div>
@@ -236,7 +207,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
                       <label className="block text-xs font-bold text-[#222f3b]">
                         Roll Number / Scholar ID
                       </label>
-                      <span className="font-mono text-[10px] text-[#78827e]">CS2024-001</span>
                     </div>
                     <input
                       id="student-roll-input"
@@ -244,7 +214,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
                       required
                       value={studentRoll}
                       onChange={e => setStudentRoll(e.target.value)}
-                      placeholder="CS2024-001"
+                      placeholder="Your student roll number"
                       className="w-full rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] px-3.5 py-2.5 text-sm font-mono text-[#222f3b] placeholder-[#78827e] focus:border-[#2f766d] focus:outline-none focus:ring-1 focus:ring-[#2f766d] transition"
                     />
                   </div>
@@ -256,7 +226,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
                 <>
                   <div>
                     <label className="block text-xs font-bold text-[#222f3b] mb-1.5">
-                      Faculty ID or Academic Email
+                      Faculty ID
                     </label>
                     <input
                       id="staff-id-input"
@@ -264,31 +234,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
                       required
                       value={staffUsername}
                       onChange={e => setStaffUsername(e.target.value)}
-                      placeholder="STF-101"
+                      placeholder="Your faculty ID"
                       className="w-full rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] px-3.5 py-2.5 text-sm font-mono text-[#222f3b] placeholder-[#78827e] focus:border-[#2f766d] focus:outline-none focus:ring-1 focus:ring-[#2f766d] transition"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[#222f3b] mb-1.5">
-                      Password
+                      Faculty Full Name
                     </label>
-                    <div className="relative">
+                    <div>
                       <input
-                        id="staff-password-input"
-                        type={showPassword ? 'text' : 'password'}
+                        id="staff-name-input"
+                        type="text"
                         required
-                        value={staffPassword}
-                        onChange={e => setStaffPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] pl-3.5 pr-10 py-2.5 text-sm text-[#222f3b] placeholder-[#78827e] focus:border-[#2f766d] focus:outline-none focus:ring-1 focus:ring-[#2f766d] transition"
+                        value={staffName}
+                        onChange={e => setStaffName(e.target.value)}
+                        placeholder="Your registered full name"
+                        className="w-full rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] px-3.5 py-2.5 text-sm text-[#222f3b] placeholder-[#78827e] focus:border-[#2f766d] focus:outline-none focus:ring-1 focus:ring-[#2f766d] transition"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-2.5 text-[#78827e] hover:text-[#222f3b] cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
                     </div>
                   </div>
                 </>
@@ -307,7 +270,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
                       required
                       value={adminUsername}
                       onChange={e => setAdminUsername(e.target.value)}
-                      placeholder="admin@northbridge.edu"
+                      placeholder="Administrator email"
                       className="w-full rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] px-3.5 py-2.5 text-sm text-[#222f3b] placeholder-[#78827e] focus:border-[#2f766d] focus:outline-none focus:ring-1 focus:ring-[#2f766d] transition"
                     />
                   </div>
@@ -354,54 +317,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToHome }) => {
                 )}
               </button>
             </form>
-          </div>
-
-          {/* EXACT "Just exploring?" Demo Account Box from the reference app */}
-          <div className="mt-6 rounded-2xl border border-[#e1ddd3] bg-[#fbfaf6] p-4">
-            <div className="mb-3">
-              <p className="text-sm font-extrabold text-[#222f3b]">Just exploring?</p>
-              <p className="mt-1 text-xs leading-5 text-[#78827e]">
-                Use a demo account to open the real portal instantly. No password required.
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <button
-                type="button"
-                id="button-demo-student"
-                onClick={() => quickLogin('student', students[0]?.id)}
-                className="rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] p-3 text-left transition hover:-translate-y-0.5 hover:border-[#2f766d] hover:bg-[#eaf3f0] cursor-pointer"
-                data-testid="button-demo-student"
-              >
-                <span className="block text-xs font-extrabold text-[#222f3b]">Student demo</span>
-                <span className="mt-1 block text-[10px] leading-4 text-[#78827e]">
-                  View courses, fees and results
-                </span>
-              </button>
-              <button
-                type="button"
-                id="button-demo-staff"
-                onClick={() => quickLogin('staff', staffList[0]?.id)}
-                className="rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] p-3 text-left transition hover:-translate-y-0.5 hover:border-[#2f766d] hover:bg-[#eaf3f0] cursor-pointer"
-                data-testid="button-demo-staff"
-              >
-                <span className="block text-xs font-extrabold text-[#222f3b]">Faculty demo</span>
-                <span className="mt-1 block text-[10px] leading-4 text-[#78827e]">
-                  Review students and attendance
-                </span>
-              </button>
-              <button
-                type="button"
-                id="button-demo-admin"
-                onClick={() => quickLogin('admin')}
-                className="rounded-xl border border-[#d8d3c7] bg-[#f6f3eb] p-3 text-left transition hover:-translate-y-0.5 hover:border-[#2f766d] hover:bg-[#eaf3f0] cursor-pointer"
-                data-testid="button-demo-admin"
-              >
-                <span className="block text-xs font-extrabold text-[#222f3b]">Admin demo</span>
-                <span className="mt-1 block text-[10px] leading-4 text-[#78827e]">
-                  Manage records and approvals
-                </span>
-              </button>
-            </div>
           </div>
 
           {/* Return to home link */}

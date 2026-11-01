@@ -119,7 +119,7 @@ export function generateTranscriptPDF({
   doc.setTextColor(34, 47, 59);
   doc.text(departmentName || 'Computer Science & Engineering', col1, y + 23);
   doc.text(`Semester ${student.semester}`, col2, y + 23);
-  doc.text(student.academicYear || '2023–2027', col3, y + 23);
+  doc.text(student.academicYear || 'Not recorded', col3, y + 23);
 
   y += 31;
 
@@ -342,10 +342,10 @@ export function generateFeeInvoicePDF({
   const contentWidth = pageWidth - margin * 2;
   let y = 14;
 
-  const totalFees = fee.totalFees || 80000;
+  const totalFees = fee.totalFees ?? 0;
   const feesPaid = fee.feesPaid || 0;
-  const feesRemaining = fee.feesRemaining || Math.max(0, totalFees - feesPaid);
-  const paymentStatus = fee.paymentStatus || (feesRemaining === 0 ? 'Fully Paid' : feesPaid > 0 ? 'Partially Paid' : 'Unpaid');
+  const feesRemaining = fee.feesRemaining ?? Math.max(0, totalFees - feesPaid);
+  const paymentStatus = fee.paymentStatus ?? (totalFees === 0 ? 'Unpaid' : feesRemaining === 0 ? 'Fully Paid' : feesPaid > 0 ? 'Partially Paid' : 'Unpaid');
   const invoiceNo = `INV-${new Date().getFullYear()}-${student.rollNumber.replace(/[^A-Za-z0-9]/g, '')}`;
 
   // Decorative border
@@ -418,7 +418,7 @@ export function generateFeeInvoicePDF({
   doc.setTextColor(34, 47, 59);
   doc.text(student.fullName, col1, y + 11);
   doc.text(student.rollNumber, col2, y + 11);
-  doc.text(fee.academicYear || '2025–2026', col3, y + 11);
+  doc.text(fee.academicYear || 'Not recorded', col3, y + 11);
 
   doc.setFontSize(7.5);
   doc.setFont('helvetica', 'normal');
@@ -496,20 +496,7 @@ export function generateFeeInvoicePDF({
 
   y += 7;
 
-  // Fee breakdown line items (proportional to total fee)
-  const tuitionPortion = Math.round(totalFees * 0.65);
-  const labPortion = Math.round(totalFees * 0.18);
-  const libraryPortion = Math.round(totalFees * 0.06);
-  const examPortion = Math.round(totalFees * 0.06);
-  const amenityPortion = totalFees - (tuitionPortion + labPortion + libraryPortion + examPortion);
-
-  const feeItems = [
-    { name: 'Core Academic Tuition & Instruction', category: 'Instructional', amount: tuitionPortion },
-    { name: 'Computing Lab & Laboratory Research Facilities', category: 'Laboratory', amount: labPortion },
-    { name: 'University Digital Library & Subscriptions', category: 'Academic Resources', amount: libraryPortion },
-    { name: 'Examination Senate Evaluation & Assessment', category: 'Examinations', amount: examPortion },
-    { name: 'Student Campus Amenities & Athletic Fund', category: 'Campus Services', amount: amenityPortion }
-  ];
+  const feeItems = [{ name: 'Assessed tuition and fees', category: 'Student fee ledger', amount: totalFees }];
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
@@ -909,7 +896,7 @@ export function generateAdminAuditReportPDF({
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(247, 244, 235);
-  doc.text('REF: AUD-REG-2026-FAS', pageWidth - margin - 8, y + 15, { align: 'right' });
+  doc.text(`REF: AUD-REG-${new Date().getFullYear()}-FAS`, pageWidth - margin - 8, y + 15, { align: 'right' });
   doc.text(`DATE: ${new Date().toLocaleDateString('en-GB')}`, pageWidth - margin - 8, y + 20, { align: 'right' });
 
   y += 29;

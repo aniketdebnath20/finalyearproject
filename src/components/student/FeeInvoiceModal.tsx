@@ -27,25 +27,13 @@ export const FeeInvoiceModal: React.FC<FeeInvoiceModalProps> = ({
   onToast
 }) => {
   const departmentName = department?.name || 'Computer Science & Engineering';
-  const totalFees = fee.totalFees || 80000;
+  const totalFees = fee.totalFees;
   const feesPaid = fee.feesPaid || 0;
-  const feesRemaining = fee.feesRemaining || Math.max(0, totalFees - feesPaid);
-  const paymentStatus = fee.paymentStatus || (feesRemaining === 0 ? 'Fully Paid' : feesPaid > 0 ? 'Partially Paid' : 'Unpaid');
+  const feesRemaining = fee.feesRemaining ?? Math.max(0, totalFees - feesPaid);
+  const paymentStatus = fee.paymentStatus ?? (totalFees === 0 ? 'Unpaid' : feesRemaining === 0 ? 'Fully Paid' : feesPaid > 0 ? 'Partially Paid' : 'Unpaid');
   const invoiceNo = `INV-${new Date().getFullYear()}-${student.rollNumber.replace(/[^A-Za-z0-9]/g, '')}`;
 
-  const tuitionPortion = Math.round(totalFees * 0.65);
-  const labPortion = Math.round(totalFees * 0.18);
-  const libraryPortion = Math.round(totalFees * 0.06);
-  const examPortion = Math.round(totalFees * 0.06);
-  const amenityPortion = totalFees - (tuitionPortion + labPortion + libraryPortion + examPortion);
-
-  const feeItems = [
-    { name: 'Core Academic Tuition & Instructional Fees', category: 'Instructional', amount: tuitionPortion },
-    { name: 'Computing Facilities & Laboratory Equipment Fund', category: 'Laboratory', amount: labPortion },
-    { name: 'University Digital Library & Academic Journals', category: 'Academic Resources', amount: libraryPortion },
-    { name: 'Semester Senate Examination Assessment', category: 'Examinations', amount: examPortion },
-    { name: 'Student Amenities, Athletics & Campus Maintenance', category: 'Campus Services', amount: amenityPortion }
-  ];
+  const feeItems = [{ name: 'Assessed tuition and fees', category: 'Student fee ledger', amount: totalFees }];
 
   const handleExportPDF = () => {
     try {
@@ -146,7 +134,7 @@ export const FeeInvoiceModal: React.FC<FeeInvoiceModalProps> = ({
                 <div className="text-[10px] text-zinc-400 uppercase tracking-wider">Invoice Document</div>
                 <div className="font-bold text-sm text-[#222f3b]">{invoiceNo}</div>
                 <div className="text-[11px] text-zinc-500 mt-1">Date: {new Date().toLocaleDateString('en-GB')}</div>
-                <div className="text-[11px] text-zinc-500">Due: {fee.dueDate || '30 Sep 2026'}</div>
+                <div className="text-[11px] text-zinc-500">Due: {fee.dueDate || 'Not set'}</div>
               </div>
             </div>
 

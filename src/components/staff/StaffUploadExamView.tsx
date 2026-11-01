@@ -12,26 +12,26 @@ import {
 } from 'lucide-react';
 
 export const StaffUploadExamView: React.FC = () => {
-  const { currentStaff, departments, courses, subjects, exams, createExam, deleteExam } = useUniversity();
+  const { currentStaff, currentUser, departments, courses, subjects, exams, createExam, deleteExam } = useUniversity();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourseFilter, setSelectedCourseFilter] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Form states for creating exam
-  const [examName, setExamName] = useState('Java OOPs Module Assessment');
+  const [examName, setExamName] = useState('');
   const [departmentId] = useState(currentStaff?.departmentId || departments[0]?.id || '');
   const [courseId, setCourseId] = useState(courses[0]?.id || '');
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [semester, setSemester] = useState(6);
-  const [examDate, setExamDate] = useState('2026-05-18');
+  const [examDate, setExamDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [startTime, setStartTime] = useState('09:30');
   const [endTime, setEndTime] = useState('12:30');
-  const [roomHall, setRoomHall] = useState('Hall C-204, Academic Block');
+  const [roomHall, setRoomHall] = useState('');
   const [totalMarks, setTotalMarks] = useState(100);
   const [passingMarks, setPassingMarks] = useState(40);
   const [examType, setExamType] = useState<ExamType>('Theory');
-  const [instructions, setInstructions] = useState('Calculators permitted for Section B. No electronic personal devices.');
+  const [instructions, setInstructions] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Scroll tracking for fade effect and quick scroll to top
@@ -95,7 +95,7 @@ export const StaffUploadExamView: React.FC = () => {
       passingMarks: Number(passingMarks),
       examType,
       instructions,
-      createdByStaffId: currentStaff?.id || 'STF-101'
+      createdByStaffId: currentUser?.id || ''
     });
 
     setIsSuccess(true);
@@ -323,8 +323,9 @@ export const StaffUploadExamView: React.FC = () => {
                   >
                     <option value="Theory">Theory Exam</option>
                     <option value="Practical">Practical Lab</option>
+                    <option value="Midterm">Midterm</option>
+                    <option value="Final">Final</option>
                     <option value="Viva">Oral Viva</option>
-                    <option value="Project">Project Defense</option>
                   </select>
                 </div>
 
@@ -332,10 +333,12 @@ export const StaffUploadExamView: React.FC = () => {
                 <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Degree Course</label>
                   <select
+                    required
                     value={courseId}
                     onChange={e => setCourseId(e.target.value)}
                     className="w-full px-3 py-1.5 text-xs rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   >
+                    <option value="">Select course</option>
                     {courses.map(c => (
                       <option key={c.id} value={c.id}>{c.courseName}</option>
                     ))}
@@ -360,10 +363,12 @@ export const StaffUploadExamView: React.FC = () => {
                 <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Curriculum Module</label>
                   <select
+                    required
                     value={subjectId}
                     onChange={e => setSubjectId(e.target.value)}
                     className="w-full px-3 py-1.5 text-xs rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   >
+                    <option value="">Select subject</option>
                     {availableSubjects.map(s => (
                       <option key={s.id} value={s.id}>
                         {s.subjectCode} — {s.subjectName}

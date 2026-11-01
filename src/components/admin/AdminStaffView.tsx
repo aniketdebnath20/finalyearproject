@@ -41,25 +41,27 @@ export const AdminStaffView: React.FC = () => {
   // Form states
   const [staffName, setStaffName] = useState('');
   const [staffId, setStaffId] = useState('');
+  const [initialPassword, setInitialPassword] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [departmentId, setDepartmentId] = useState(departments[0]?.id || '');
   const [designation, setDesignation] = useState('Associate Professor');
-  const [qualification, setQualification] = useState('Ph.D. in Computer Science');
-  const [joiningDate, setJoiningDate] = useState('2022-08-15');
-  const [profilePhoto, setProfilePhoto] = useState('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80');
+  const [qualification, setQualification] = useState('');
+  const [joiningDate, setJoiningDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [profilePhoto, setProfilePhoto] = useState('');
 
   const openAddModal = () => {
     setEditingStaff(null);
     setStaffName('');
     setStaffId(`STF-${100 + staffList.length + 1}`);
+    setInitialPassword('');
     setEmail('');
-    setPhone('+1 (555) 789-0123');
+    setPhone('');
     setDepartmentId(departments[0]?.id || '');
     setDesignation('Assistant Professor');
-    setQualification('Ph.D.');
+    setQualification('');
     setJoiningDate(new Date().toISOString().split('T')[0]);
-    setProfilePhoto('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80');
+    setProfilePhoto('');
     setIsModalOpen(true);
   };
 
@@ -67,13 +69,14 @@ export const AdminStaffView: React.FC = () => {
     setEditingStaff(stf);
     setStaffName(stf.staffName);
     setStaffId(stf.staffId);
+    setInitialPassword('');
     setEmail(stf.email);
     setPhone(stf.phone);
     setDepartmentId(stf.departmentId);
     setDesignation(stf.designation);
     setQualification(stf.qualification || 'Ph.D.');
     setJoiningDate(stf.joiningDate);
-    setProfilePhoto(stf.profilePhoto);
+    setProfilePhoto(stf.profilePhoto || '');
     setIsModalOpen(true);
   };
 
@@ -91,7 +94,8 @@ export const AdminStaffView: React.FC = () => {
         qualification,
         joiningDate,
         profilePhoto,
-        accountStatus: editingStaff.accountStatus
+        accountStatus: editingStaff.accountStatus,
+        ...(initialPassword ? { password: initialPassword } : {})
       });
     } else {
       addStaff({
@@ -104,7 +108,8 @@ export const AdminStaffView: React.FC = () => {
         qualification,
         joiningDate,
         profilePhoto,
-        accountStatus: 'Active'
+        accountStatus: 'Active',
+        password: initialPassword
       });
     }
 
@@ -332,6 +337,21 @@ export const AdminStaffView: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">
+                    {editingStaff ? 'Set New Password (optional)' : 'Initial Password'}
+                  </label>
+                  <input
+                    type="password"
+                    required={!editingStaff}
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={initialPassword}
+                    onChange={e => setInitialPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+
+                <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Institutional Email</label>
                   <input
                     type="email"
@@ -356,10 +376,12 @@ export const AdminStaffView: React.FC = () => {
                 <div>
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Department</label>
                   <select
+                    required
                     value={departmentId}
                     onChange={e => setDepartmentId(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   >
+                    <option value="">Select department</option>
                     {departments.map(d => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}

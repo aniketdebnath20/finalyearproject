@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUniversity } from '../../context/UniversityContext';
 import {
   Users,
@@ -24,81 +24,42 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
   onNavigate,
   loading = false
 }) => {
-  const { } = useUniversity();
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentStaff, students, subjects, exams, results, studentAttendance, notifications, isDataLoading, refreshData } = useUniversity();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Initial simulated fetch on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 550);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      setIsLoading(false);
-    }, 650);
+    await refreshData();
+    setIsRefreshing(false);
   };
 
-  const isDataFetching = loading || isLoading || isRefreshing;
-
-  // Upcoming exams matching screenshot 3
-  const upcomingExams = [
-    {
-      id: 'ex-1',
-      month: 'SEP',
-      day: '8',
-      title: 'Data Structures',
-      details: 'B.Tech Computer Science · 10:00 AM - 12:00 PM · Hall A-204',
-      badge: 'midterm',
-      badgeBg: 'bg-[#fef3c7] text-[#92400e]'
-    },
-    {
-      id: 'ex-2',
-      month: 'SEP',
-      day: '11',
-      title: 'Database Systems',
-      details: 'B.Tech Computer Science · 02:00 PM - 04:00 PM · Lab C-102',
-      badge: 'practical',
-      badgeBg: 'bg-[#ffedd5] text-[#9a3412]'
-    },
-    {
-      id: 'ex-3',
-      month: 'NOV',
-      day: '24',
-      title: 'Computer Networks',
-      details: 'B.Tech Computer Science · 10:00 AM - 01:00 PM · Main Auditorium',
-      badge: 'final',
-      badgeBg: 'bg-[#fef9c3] text-[#854d0e]'
-    }
-  ];
-
-  // Latest notices matching screenshot 3
-  const latestNotices = [
-    {
-      id: 'notif-1',
-      title: 'Mid-semester schedule published',
-      message: 'Your September examination schedule is now available.',
-      isUrgent: true
-    },
-    {
-      id: 'notif-2',
-      title: 'Fee payment reminder',
-      message: 'Your second semester installment is due on September 15.',
-      isUrgent: true
-    },
-    {
-      id: 'notif-3',
-      title: 'Certificate ready to download',
-      message: 'Your Academic Excellence Award certificate has been issued.',
-      isUrgent: false
-    }
-  ];
+  const isDataFetching = loading || isDataLoading || isRefreshing;
+  const departmentStudents = students.filter(student => student.departmentId === currentStaff?.departmentId);
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingExams = exams
+    .filter(exam => exam.examDate >= today)
+    .sort((a, b) => a.examDate.localeCompare(b.examDate))
+    .slice(0, 3)
+    .map(exam => {
+      const date = new Date(`${exam.examDate}T00:00:00`);
+      const subject = subjects.find(item => item.id === exam.subjectId);
+      return {
+        id: exam.id,
+        month: date.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
+        day: String(date.getDate()),
+        title: exam.examName,
+        details: `${subject?.subjectName || 'Subject'} · ${exam.startTime}–${exam.endTime} · ${exam.roomHall || 'Venue to be confirmed'}`,
+        badge: exam.examType,
+        badgeBg: 'bg-[#fef3c7] text-[#92400e]'
+      };
+    });
+  const latestNotices = notifications.filter(item => item.status !== 'cancelled').slice(0, 3);
+  const monthExams = exams.filter(exam => exam.examDate.slice(0, 7) === today.slice(0, 7)).length;
+  const pendingResults = exams.filter(exam => exam.examDate < today && !results.some(result => result.examId === exam.id)).length;
+  const markedCount = studentAttendance.length;
+  const attendanceRate = markedCount
+    ? Math.round(studentAttendance.filter(record => record.status === 'Present' || record.status === 'Late').length / markedCount * 100)
+    : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -151,9 +112,9 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                124
+                {departmentStudents.length}
               </div>
-              <div className="text-xs text-zinc-400 mt-0.5">across 4 courses</div>
+              <div className="text-xs text-zinc-400 mt-0.5">in your department</div>
             </div>
           </div>
 
@@ -170,7 +131,7 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                2
+                {monthExams}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">scheduled this month</div>
             </div>
@@ -189,7 +150,7 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                18
+                {pendingResults}
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">awaiting submission</div>
             </div>
@@ -208,7 +169,7 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-3xl font-extrabold text-[#18222d] tracking-tight">
-                85%
+                {attendanceRate}%
               </div>
               <div className="text-xs text-zinc-400 mt-0.5">department average</div>
             </div>
@@ -242,7 +203,9 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
             </div>
 
             <div className="space-y-4">
-              {upcomingExams.map(item => (
+              {upcomingExams.length === 0 ? (
+                <p className="py-6 text-center text-xs text-zinc-400">No upcoming exams have been scheduled.</p>
+              ) : upcomingExams.map(item => (
                 <div
                   key={item.id}
                   onClick={() => onNavigate('exams-manage')}
@@ -295,7 +258,9 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
             </div>
 
             <div className="space-y-4">
-              {latestNotices.map(notice => (
+              {latestNotices.length === 0 ? (
+                <p className="py-6 text-center text-xs text-zinc-400">There are no active notices.</p>
+              ) : latestNotices.map(notice => (
                 <div
                   key={notice.id}
                   onClick={() => onNavigate('notifications')}
@@ -303,7 +268,7 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
                 >
                   <span
                     className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${
-                      notice.isUrgent ? 'bg-[#ea580c]' : 'bg-[#cbd5e1]'
+                      notice.priority === 'urgent' || notice.priority === 'important' ? 'bg-[#ea580c]' : 'bg-[#cbd5e1]'
                     }`}
                   />
                   <div>

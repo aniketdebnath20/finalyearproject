@@ -13,6 +13,8 @@ import {
   ArrowUp
 } from 'lucide-react';
 
+type PaymentChannel = 'Online / UPI' | 'Net Banking' | 'Debit/Credit Card' | 'Bank Demand Draft' | 'Cash';
+
 export const AdminFeesView: React.FC = () => {
   const { students, feeRecords, updateFeeRecord } = useUniversity();
 
@@ -42,7 +44,7 @@ export const AdminFeesView: React.FC = () => {
   const [totalFees, setTotalFees] = useState(0);
   const [feesPaid, setFeesPaid] = useState(0);
   const [paymentDate, setPaymentDate] = useState('');
-  const [paymentMode, setPaymentMode] = useState<'Online / UPI' | 'Net Banking' | 'Debit/Credit Card' | 'Bank Demand Draft' | 'Cash'>('Online / UPI');
+  const [paymentMode, setPaymentMode] = useState<PaymentChannel>('Online / UPI');
   const [remarks, setRemarks] = useState('');
 
   const openEditModal = (rec: FeeRecord) => {
@@ -50,7 +52,7 @@ export const AdminFeesView: React.FC = () => {
     setTotalFees(rec.totalFees);
     setFeesPaid(rec.feesPaid);
     setPaymentDate(rec.lastPaymentDate || new Date().toISOString().split('T')[0]);
-    setPaymentMode(rec.paymentMode as any || 'Online / UPI');
+    setPaymentMode((rec.paymentMode as PaymentChannel) || 'Online / UPI');
     setRemarks(rec.remarks || '');
   };
 
@@ -137,7 +139,7 @@ export const AdminFeesView: React.FC = () => {
           <Filter className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
           <select
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as any)}
+            onChange={e => setStatusFilter(e.target.value as 'all' | FeePaymentStatus)}
             className="w-full sm:w-52 py-1.5 px-2.5 text-xs rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900 font-mono"
           >
             <option value="all">All Payment Statuses</option>
@@ -321,7 +323,7 @@ export const AdminFeesView: React.FC = () => {
                   <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Payment Channel</label>
                   <select
                     value={paymentMode}
-                    onChange={e => setPaymentMode(e.target.value as any)}
+                    onChange={e => setPaymentMode(e.target.value as PaymentChannel)}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900 font-sans"
                   >
                     <option value="Online / UPI">Online / UPI</option>

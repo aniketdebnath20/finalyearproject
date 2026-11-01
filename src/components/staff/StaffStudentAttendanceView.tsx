@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useUniversity } from '../../context/UniversityContext';
 import type{ AttendanceStatus } from '../../types';
 import {
@@ -13,6 +13,7 @@ import { truncateEmail } from '../../utils/formatters';
 export const StaffStudentAttendanceView: React.FC = () => {
   const {
     currentStaff,
+    currentUser,
     courses,
     subjects,
     students,
@@ -27,6 +28,8 @@ export const StaffStudentAttendanceView: React.FC = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>(
     subjects.find(s => s.staffId === currentStaff?.id)?.id || subjects[0]?.id || ''
   );
+  const effectiveSubjectId = selectedSubjectId || subjects.find(s => s.staffId === currentStaff?.id)?.id || subjects[0]?.id || '';
+  const selectionKey = `${selectedDate}:${effectiveSubjectId}`;
 
   // Scroll tracking for fade effect and quick scroll to top
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +49,7 @@ export const StaffStudentAttendanceView: React.FC = () => {
     }
   };
 
-  const selectedSubject = subjects.find(s => s.id === selectedSubjectId);
+  const selectedSubject = subjects.find(s => s.id === effectiveSubjectId);
 
   // Filter students for this course & semester
   const relevantStudents = students.filter(
@@ -54,32 +57,22 @@ export const StaffStudentAttendanceView: React.FC = () => {
          (!selectedSubject?.semester || s.semester === selectedSubject.semester)
   );
 
-  // Local attendance state mapped by studentId: 'Present' | 'Absent' | 'Late' | 'Half Day'
-  const [attendanceState, setAttendanceState] = useState<Record<string, AttendanceStatus>>({});
-  const [isSaved, setIsSaved] = useState(false);
-
-  // Initialize or read existing attendance for date & subject
-  useEffect(() => {
-    const existing = studentAttendance.filter(
-      a => a.date === selectedDate && a.subjectId === selectedSubjectId
-    );
-    const initialMap: Record<string, AttendanceStatus> = {};
-
-    relevantStudents.forEach(st => {
-      const match = existing.find(e => e.studentId === st.id);
-      initialMap[st.id] = match ? match.status : 'Present';
-    });
-
-    setAttendanceState(initialMap);
-    setIsSaved(false);
-  }, [selectedDate, selectedSubjectId, relevantStudents.length]);
+  const [selectionOverrides, setSelectionOverrides] = useState<{ key: string; statuses: Record<string, AttendanceStatus> }>({ key: '', statuses: {} });
+  const [savedSelectionKey, setSavedSelectionKey] = useState('');
+  const savedRecords = studentAttendance.filter(record => record.date === selectedDate && record.subjectId === effectiveSubjectId);
+  const attendanceState: Record<string, AttendanceStatus | ''> = Object.fromEntries(relevantStudents.map(student => {
+    const savedStatus = savedRecords.find(record => record.studentId === student.id)?.status || '';
+    const override = selectionOverrides.key === selectionKey ? selectionOverrides.statuses[student.id] : undefined;
+    return [student.id, override || savedStatus];
+  }));
+  const isSaved = savedSelectionKey === selectionKey;
 
   const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
-    setAttendanceState(prev => ({
-      ...prev,
-      [studentId]: status
+    setSelectionOverrides(previous => ({
+      key: selectionKey,
+      statuses: { ...(previous.key === selectionKey ? previous.statuses : {}), [studentId]: status }
     }));
-    setIsSaved(false);
+    setSavedSelectionKey('');
   };
 
   const handleMarkAllPresent = () => {
@@ -87,25 +80,26 @@ export const StaffStudentAttendanceView: React.FC = () => {
     relevantStudents.forEach(st => {
       updated[st.id] = 'Present';
     });
-    setAttendanceState(updated);
-    setIsSaved(false);
+    setSelectionOverrides({ key: selectionKey, statuses: updated });
+    setSavedSelectionKey('');
   };
 
   const handleSaveAttendance = () => {
     if (!selectedSubject) return;
 
     Object.entries(attendanceState).forEach(([studentId, status]) => {
+      if (!status) return;
       markStudentAttendance({
         studentId,
         subjectId: selectedSubject.id,
         date: selectedDate,
         status,
-        markedByStaffId: currentStaff?.id || 'STF-101'
+        markedByStaffId: currentUser?.id || ''
       });
     });
 
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 4000);
+    setSavedSelectionKey(selectionKey);
+    setTimeout(() => setSavedSelectionKey(''), 4000);
   };
 
   return (
@@ -137,6 +131,7 @@ export const StaffStudentAttendanceView: React.FC = () => {
           <button
             type="button"
             onClick={handleSaveAttendance}
+            disabled={!selectedSubject || !Object.values(attendanceState).some(Boolean)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white shadow-2xs transition-colors cursor-pointer"
           >
             <Save className="w-3.5 h-3.5" /> Commit Attendance
@@ -164,7 +159,7 @@ export const StaffStudentAttendanceView: React.FC = () => {
           <div className="relative">
             <BookOpen className="w-3.5 h-3.5 absolute left-3 top-3 text-zinc-400" />
             <select
-              value={selectedSubjectId}
+              value={effectiveSubjectId}
               onChange={e => setSelectedSubjectId(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             >
@@ -229,7 +224,7 @@ export const StaffStudentAttendanceView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-zinc-100 font-sans">
               {relevantStudents.map(student => {
-                const currentStatus = attendanceState[student.id] || 'Present';
+                const currentStatus = attendanceState[student.id] || '';
 
                 return (
                   <tr key={student.id} className="hover:bg-zinc-50/60 transition-colors">

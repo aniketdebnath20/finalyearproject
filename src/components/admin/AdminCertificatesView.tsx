@@ -9,7 +9,6 @@ import {
   User,
   ShieldCheck,
   X,
-  Upload,
   ArrowUp
 } from 'lucide-react';
 import { MasterViewSkeleton } from '../common/Skeleton';
@@ -59,15 +58,11 @@ export const AdminCertificatesView: React.FC<AdminCertificatesViewProps> = ({
 
   // Form states for issuing new certificate
   const [targetStudentId, setTargetStudentId] = useState(students[0]?.id || '');
-  const [certTitle, setCertTitle] = useState('Certificate of Academic Distinction in Computer Science');
+  const [certTitle, setCertTitle] = useState('');
   const [issueDate, setIssueDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [description, setDescription] = useState('Recognized for exemplary performance, academic rigour, and capstone excellence.');
-  const [fileName, setFileName] = useState<string>('');
+  const [description, setDescription] = useState('');
+  const [downloadUrl, setDownloadUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (isLoading || isDataLoading) {
-    return <MasterViewSkeleton role="admin" activeTab="certificates" />;
-  }
 
   // Filter certificates based solely on the search bar
   const filteredCertificates = useMemo(() => {
@@ -109,16 +104,16 @@ export const AdminCertificatesView: React.FC<AdminCertificatesViewProps> = ({
         certificateType: 'Merit',
         issueDate,
         description: description.trim(),
-        downloadUrl: fileName ? `https://storage.university.edu/certs/${encodeURIComponent(fileName)}` : undefined
+        downloadUrl: downloadUrl.trim() || undefined
       });
 
       const student = students.find(s => s.id === targetStudentId);
       addToast(`Certificate issued to ${student?.fullName || 'scholar'} successfully!`, 'success');
       setIsIssueModalOpen(false);
       // Reset form
-      setCertTitle('Certificate of Academic Distinction in Computer Science');
-      setDescription('Recognized for exemplary performance, academic rigour, and capstone excellence.');
-      setFileName('');
+      setCertTitle('');
+      setDescription('');
+      setDownloadUrl('');
     } catch {
       addToast('Failed to issue certificate.', 'error');
     } finally {
@@ -136,6 +131,10 @@ export const AdminCertificatesView: React.FC<AdminCertificatesViewProps> = ({
   useEffect(() => {
     handleScroll();
   }, [filteredCertificates]);
+
+  if (isLoading || isDataLoading) {
+    return <MasterViewSkeleton role="admin" activeTab="certificates" />;
+  }
 
   return (
     <div
@@ -290,7 +289,7 @@ export const AdminCertificatesView: React.FC<AdminCertificatesViewProps> = ({
                       {/* Issue Date & Authority */}
                       <td className="py-3.5 px-4">
                         <div className="text-xs text-zinc-800 font-medium">
-                          {cert.issueDate || '2026-03-15'}
+                          {cert.issueDate || 'Not recorded'}
                         </div>
                         <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
                           {cert.issuedByAdminName || 'Office of the Registrar'}
@@ -451,30 +450,18 @@ export const AdminCertificatesView: React.FC<AdminCertificatesViewProps> = ({
                 />
               </div>
 
-              {/* Document Attachment Upload */}
+              {/* Document URL */}
               <div>
                 <label className="text-[10px] font-mono uppercase text-zinc-500 font-semibold block mb-1">
-                  Upload Certificate File (PDF / Image / Scan)
+                  Certificate Document URL
                 </label>
-                <label className="border-2 border-dashed border-zinc-300 hover:border-zinc-400 rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-zinc-50/50 hover:bg-zinc-50 transition-colors">
-                  <Upload className="w-5 h-5 text-zinc-400" />
-                  <span className="text-xs text-zinc-600 font-medium">
-                    {fileName ? fileName : 'Drag & drop certificate document or click to browse'}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-mono">
-                    Supported: PDF, PNG, JPG (Digital hash verified upon submission)
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
-                    className="hidden"
-                    onChange={e => {
-                      if (e.target.files?.[0]) {
-                        setFileName(e.target.files[0].name);
-                      }
-                    }}
-                  />
-                </label>
+                <input
+                  type="url"
+                  value={downloadUrl}
+                  onChange={e => setDownloadUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-zinc-50 border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900"
+                />
               </div>
 
               {/* Modal Buttons */}

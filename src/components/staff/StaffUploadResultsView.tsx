@@ -16,7 +16,7 @@ interface MarksRow {
 
 export const StaffUploadResultsView: React.FC = () => {
   const {
-    currentStaff,
+    currentUser,
     courses,
     subjects,
     exams,
@@ -29,7 +29,7 @@ export const StaffUploadResultsView: React.FC = () => {
   const [selectedSemester, setSelectedSemester] = useState(6);
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || '');
   const [selectedExamId, setSelectedExamId] = useState(exams[0]?.id || '');
-  const [isSaved, setIsSaved] = useState(false);
+  const [savedMarksKey, setSavedMarksKey] = useState('');
 
   // Scroll tracking for fade effect and quick scroll to top
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -61,67 +61,35 @@ export const StaffUploadResultsView: React.FC = () => {
          (!selectedSemester || s.semester === selectedSemester)
   );
 
-  // Row marks state
-  const [marksData, setMarksData] = useState<Record<string, MarksRow>>({});
-
-  // Sync with existing results
-  useEffect(() => {
-    const newMarks: Record<string, MarksRow> = {};
-
-    targetStudents.forEach(st => {
-      const existing = results.find(
-        r => r.studentId === st.id && r.subjectId === selectedSubjectId
-      );
-
-      if (existing) {
-        newMarks[st.id] = {
-          studentId: st.id,
-          internal: existing.internalMarks,
-          external: existing.externalMarks,
-          practical: existing.practicalMarks
-        };
-      } else {
-        newMarks[st.id] = {
-          studentId: st.id,
-          internal: 24,
-          external: 42,
-          practical: 18
-        };
-      }
-    });
-
-    setMarksData(newMarks);
-    setIsSaved(false);
-  }, [selectedCourseId, selectedSemester, selectedSubjectId, targetStudents.length]);
+  const marksKey = `${selectedCourseId}:${selectedSemester}:${selectedSubjectId}`;
+  const [marksOverrides, setMarksOverrides] = useState<{ key: string; rows: Record<string, MarksRow> }>({ key: '', rows: {} });
+  const marksData: Record<string, MarksRow> = Object.fromEntries(targetStudents.map(student => {
+    const existing = results.find(result => result.studentId === student.id && result.subjectId === selectedSubjectId);
+    const savedMarks: MarksRow = existing
+      ? { studentId: student.id, internal: existing.internalMarks, external: existing.externalMarks, practical: existing.practicalMarks }
+      : { studentId: student.id, internal: 0, external: 0, practical: 0 };
+    return [student.id, marksOverrides.key === marksKey ? marksOverrides.rows[student.id] || savedMarks : savedMarks];
+  }));
+  const isSaved = savedMarksKey === marksKey;
 
   useEffect(() => {
     handleScroll();
   }, [targetStudents.length]);
 
   const handleMarkChange = (studentId: string, field: 'internal' | 'external' | 'practical', value: number) => {
-    setMarksData(prev => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        [field]: Math.max(0, value)
-      }
+    const updatedRow = { ...marksData[studentId], [field]: Math.max(0, value) };
+    setMarksOverrides(previous => ({
+      key: marksKey,
+      rows: { ...(previous.key === marksKey ? previous.rows : {}), [studentId]: updatedRow }
     }));
-    setIsSaved(false);
+    setSavedMarksKey('');
   };
 
   // Grade calculation helper
   const computeEvaluation = (internal: number, external: number, practical: number) => {
     const total = internal + external + practical;
-    let grade = 'F';
-    let gradePoints = 0;
-
-    if (total >= 90) { grade = 'A+'; gradePoints = 10; }
-    else if (total >= 80) { grade = 'A'; gradePoints = 9; }
-    else if (total >= 70) { grade = 'B+'; gradePoints = 8; }
-    else if (total >= 60) { grade = 'B'; gradePoints = 7; }
-    else if (total >= 50) { grade = 'C'; gradePoints = 6; }
-    else if (total >= 40) { grade = 'D'; gradePoints = 5; }
-    else { grade = 'F'; gradePoints = 0; }
+    const grade = total >= 90 ? 'A+' : total >= 80 ? 'A' : total >= 70 ? 'B+' : total >= 60 ? 'B' : total >= 50 ? 'C' : total >= 40 ? 'D' : 'F';
+    const gradePoints = total >= 90 ? 10 : total >= 80 ? 9 : total >= 70 ? 8 : total >= 60 ? 7 : total >= 50 ? 6 : total >= 40 ? 5 : 0;
 
     const passStatus = total >= 40 ? 'Pass' : 'Fail';
 
@@ -136,7 +104,7 @@ export const StaffUploadResultsView: React.FC = () => {
         subjectId: selectedSubjectId,
         examId: selectedExamId,
         semester: selectedSemester,
-        academicYear: '2025-2026',
+        academicYear: targetStudents.find(student => student.id === row.studentId)?.academicYear || String(new Date().getFullYear()),
         internalMarks: row.internal,
         externalMarks: row.external,
         practicalMarks: row.practical,
@@ -144,12 +112,12 @@ export const StaffUploadResultsView: React.FC = () => {
         grade,
         gradePoints,
         resultStatus: passStatus as 'Pass' | 'Fail',
-        evaluatedByStaffId: currentStaff?.id || 'STF-101'
+        evaluatedByStaffId: currentUser?.id || ''
       });
     });
 
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 5000);
+    setSavedMarksKey(marksKey);
+    setTimeout(() => setSavedMarksKey(''), 5000);
   };
 
   return (

@@ -19,60 +19,20 @@ export const StudentResultsView: React.FC<StudentResultsViewProps> = ({ isLoadin
 
     const rawResults = results.filter(r => r.studentId === currentStudent.id);
 
-    // If student has explicit results recorded
-    if (rawResults.length > 0) {
-      return rawResults.map(r => {
-        const sub = subjects.find(s => s.id === r.subjectId);
-        const exam = exams.find(e => e.id === r.examId || (sub && e.subjectId === sub.id));
-        const course = courses.find(c => c.id === (exam?.courseId || sub?.courseId || currentStudent.courseId));
-
-        const courseName = course?.courseName || 'Java Full Stack Development';
-        const topicName = sub?.subjectName || 'Core Java Architecture';
-        const examName = exam?.examName || `${topicName} Examination`;
-        const examDate = exam?.examDate || r.createdAt?.split('T')[0] || '2026-09-22';
-        const totalMarks = exam?.totalMarks || 100;
-        const obtainedMarks = r.totalMarks ?? (r.internalMarks + r.externalMarks + r.practicalMarks);
-        const isPass = r.resultStatus === 'Pass' || (obtainedMarks >= (exam?.passingMarks || 40));
-
-        return {
-          id: r.id,
-          courseName,
-          examName,
-          topicName,
-          examDate,
-          totalMarks,
-          obtainedMarks,
-          status: isPass ? ('Pass' as const) : ('Fail' as const)
-        };
-      });
-    }
-
-    // Fallback: Derive from the student's enrolled course subjects & scheduled exams
-    const studentCourse = courses.find(c => c.id === currentStudent.courseId) || courses[0];
-    const courseSubjects = subjects.filter(s => s.courseId === (studentCourse?.id || 'course-btech-cse'));
-
-    return courseSubjects.map((sub, idx) => {
-      const exam = exams.find(e => e.subjectId === sub.id);
-      const courseName = studentCourse?.courseName || 'Java Full Stack Development';
-      const topicName = sub.subjectName;
-      const examName = exam?.examName || `${topicName} Assessment Examination`;
-      const examDate = exam?.examDate || `2026-09-${20 + idx}`;
-      const totalMarks = exam?.totalMarks || 100;
-
-      // Deterministic realistic mark
-      const seed = ((currentStudent.id.charCodeAt(currentStudent.id.length - 1) || 0) * 7 + idx * 11) % 30;
-      const obtainedMarks = 68 + seed;
-      const isPass = obtainedMarks >= 40;
-
+    return rawResults.map(result => {
+      const subject = subjects.find(item => item.id === result.subjectId);
+      const exam = exams.find(item => item.id === result.examId || item.subjectId === result.subjectId);
+      const course = courses.find(item => item.id === (exam?.courseId || subject?.courseId || currentStudent.courseId));
+      const obtainedMarks = result.totalMarks ?? result.internalMarks + result.externalMarks + result.practicalMarks;
       return {
-        id: `gen-res-${sub.id}`,
-        courseName,
-        examName,
-        topicName,
-        examDate,
-        totalMarks,
+        id: result.id,
+        courseName: course?.courseName || 'Unassigned course',
+        examName: exam?.examName || 'Assessment result',
+        topicName: subject?.subjectName || 'Unassigned subject',
+        examDate: exam?.examDate || result.createdAt.slice(0, 10),
+        totalMarks: exam?.totalMarks ?? 100,
         obtainedMarks,
-        status: isPass ? ('Pass' as const) : ('Fail' as const)
+        status: result.resultStatus || (obtainedMarks >= (exam?.passingMarks ?? 40) ? 'Pass' as const : 'Fail' as const)
       };
     });
   }, [results, currentStudent, subjects, exams, courses]);
